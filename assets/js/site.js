@@ -356,15 +356,35 @@
   }
 
   // ------------------------------------------------------------------ helpers shared by the new figures
-  function once(node, cb) {
-    var done = false;
-    onVisible(node, function (v) { if (v && !done) { done = true; cb(); } });
-  }
   function sub(parent, x, y, base, index, cls, extra) {
     var t = txt(parent, x, y, base, cls, extra);
     var s = el('tspan', {'baseline-shift': 'sub', 'font-size': '0.68em'}, t);
     s.textContent = index;
     return t;
+  }
+  // A two-state figure that follows the scroll position: its second state shows once the figure's centre has risen above
+  // `enter` of the viewport height, and the first returns when the centre sinks below `leave` again (scrolling back up).
+  // Only crossings act, so a click on the figure's own switch holds until the next crossing.
+  function scrolly(node, enter, leave, onIn, onOut) {
+    var state = null, ticking = false;
+    function check() {
+      ticking = false;
+      var r = node.getBoundingClientRect(), vh = window.innerHeight || document.documentElement.clientHeight;
+      var c = (r.top + r.height / 2) / vh;
+      if (state !== 'in' && c < enter) { state = 'in'; onIn(); }
+      else if (state !== 'out' && c > leave) { state = 'out'; onOut(); }
+    }
+    function later() { if (!ticking) { ticking = true; requestAnimationFrame(check); } }
+    window.addEventListener('scroll', later, {passive: true});
+    window.addEventListener('resize', later);
+    check();
+  }
+  function onceVisible(node, ratio, cb) {
+    if (!('IntersectionObserver' in window)) { cb(); return; }
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.intersectionRatio >= ratio) { io.disconnect(); cb(); } });
+    }, {threshold: [ratio]});
+    io.observe(node);
   }
   function aulc(points) {
     var s = 0;
@@ -415,15 +435,15 @@
     }
     el('circle', {cx: X_OUT, cy: YC, r: 8, 'class': 'pc-out'}, svg);
     txt(svg, X_OUT + 16, YC + 7, 'y', 'pc-lab', {'font-size': '20px'});
-    var buttons = document.querySelectorAll('.pieces .seg-b'), counts = document.querySelectorAll('.counts .count'), auto = !REDUCE;
+    var buttons = document.querySelectorAll('.pieces .seg-b'), counts = document.querySelectorAll('.counts .count');
     function show(view) {
       svg.classList.toggle('show-pieces', view === 'pieces');
       buttons.forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-view') === view)); });
       counts.forEach(function (c) { c.classList.toggle('on', c.getAttribute('data-view') === view); });
     }
-    buttons.forEach(function (b) { b.addEventListener('click', function () { auto = false; show(b.getAttribute('data-view')); }); });
+    buttons.forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-view')); }); });
     show('whole');
-    once(svg, function () { setTimeout(function () { if (auto) show('pieces'); }, 1700); });
+    scrolly(svg, 0.5, 0.64, function () { show('pieces'); }, function () { show('whole'); });
   }
 
   // ------------------------------------------------------------------ the gap: Dense and baselines against GraphOracle, then LeWi
@@ -475,7 +495,7 @@
     legend(gL, ly + 60, 'gp-lewi', 'LeWi');
     legend(svg, ly + 90, 'gp-oracle', 'GraphOracle');
     txt(svg, lx + 54, ly + 111, 'given the target graph', 'gp-leg-k');
-    var len = lp.getTotalLength ? lp.getTotalLength() : 0, buttons = document.querySelectorAll('.gapbox .seg-b'), auto = !REDUCE;
+    var len = lp.getTotalLength ? lp.getTotalLength() : 0, buttons = document.querySelectorAll('.gapbox .seg-b');
     function show(on, animate) {
       svg.classList.toggle('with-lewi', on);
       buttons.forEach(function (b) { b.setAttribute('aria-selected', String((b.getAttribute('data-lewi') === 'on') === on)); });
@@ -485,9 +505,9 @@
         lp.style.transition = 'stroke-dashoffset 1.6s ease'; lp.style.strokeDashoffset = '0';
       }
     }
-    buttons.forEach(function (b) { b.addEventListener('click', function () { auto = false; show(b.getAttribute('data-lewi') === 'on', true); }); });
+    buttons.forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-lewi') === 'on', true); }); });
     show(false);
-    once(svg, function () { setTimeout(function () { if (auto) show(true, true); }, 1800); });
+    scrolly(svg, 0.5, 0.64, function () { show(true, true); }, function () { show(false); });
   }
 
   // ------------------------------------------------------------------ how it works: four steps, as in the talk
@@ -514,7 +534,6 @@
     var focusRing = el('circle', {r: 26, 'class': 'sv-ring'}, gNodes);
     var eNode = el('rect', {width: 22, height: 22, 'class': 'sv-e'}, gNodes);
     var eLab = sub(gNodes, 0, 0, 'e', 'i', 'sv-lab', {'text-anchor': 'middle'});
-    txt(svg, W - 16, H - 14, 'embedding space (drawn in 2-D)', 'sv-cap', {'text-anchor': 'end'});
     var links = N.map(function () { return el('line', {'class': 'sv-link'}, gLinks); });
     var gone = el('line', {'class': 'sv-gone'}, gGone);
     var pullT = txt(gArrows, 0, 0, 'pull', 'sv-pull-t', {'text-anchor': 'middle'}), pushT = txt(gArrows, 0, 0, 'push', 'sv-push-t', {'text-anchor': 'middle'});
@@ -610,10 +629,10 @@
     });
     function move(ev) { if (!drag) return; var q = toSvg(ev); st.e = [clamp(q.x, 14, W - 14), clamp(q.y, 14, H - 14)]; draw(); }
     function up() { drag = null; window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); }
+    auto = false;
     setStep(0, false);
-    if (timer) clearTimeout(timer);
-    auto = !REDUCE;
-    once(svg, function () { if (auto) setStep(0, false); });
+    // the steps start playing once most of the figure is on screen
+    onceVisible(svg, 0.6, function () { if (!REDUCE && !drag) { auto = true; setStep(st.step, false); } });
   }
 
   // ------------------------------------------------------------------ results: the pattern across target structures
@@ -791,7 +810,6 @@
       net = nets[i] || (nets[i] = new Net(r));
       buttons.forEach(function (b, j) { b.setAttribute('aria-selected', String(j === i)); b.tabIndex = j === i ? 0 : -1; });
       targetGraph($('gallery-target'), r.teacher, {width: 260, levelH: r.teacher.leaves > 8 ? 26 : 30, nodeR: r.teacher.leaves > 8 ? 5 : 6.2, leafR: 2.8, pad: 9});
-      $('gallery-note').textContent = r.note;
       $('gallery-demo').href = 'demo/index.html#run=' + r.stem;
       view.setView(r.view.yaw, r.view.pitch);
       style.radius = r.counts[1] > 32 ? 2.3 : 3.0;

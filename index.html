@@ -19,9 +19,9 @@
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/plexsans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/fonts.css?v=202610140918">
-<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610140918">
-<link rel="stylesheet" href="assets/css/site.css?v=202610140918">
+<link rel="stylesheet" href="assets/css/fonts.css?v=202610140935">
+<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610140935">
+<link rel="stylesheet" href="assets/css/site.css?v=202610140935">
 </head>
 <body>
 
@@ -85,10 +85,9 @@
         <svg id="pieces-svg" role="img" aria-label="A function of eight inputs, shown as one box and as a tree of seven two-input pieces."></svg>
       </figure>
       <div class="counts">
-        <div class="count" data-view="whole"><span class="count-n">100,000,000</span><span class="count-k">cells to fill with data for one function of 8 inputs</span></div>
-        <div class="count" data-view="pieces"><span class="count-n">700</span><span class="count-k">cells for 7 pieces of 2 inputs each</span></div>
+        <div class="count" data-view="whole"><span class="count-n">100,000,000</span><span class="count-k">cells for one function of 8 inputs, at 10 levels each</span></div>
+        <div class="count" data-view="pieces"><span class="count-n">700</span><span class="count-k">cells for 7 pieces of 2 inputs</span></div>
       </div>
-      <p class="note">At 10 levels per input.</p>
     </div>
   </div>
 </section>
@@ -164,13 +163,11 @@
       <div class="gallery-body">
         <div class="gallery-stage">
           <canvas id="gallery-net" aria-label="The final learned wiring of the selected network in 3-D."></canvas>
-          <div class="gallery-hint">drag to rotate</div>
           <div class="gallery-layers" id="gallery-layers" role="group" aria-label="Connections shown"></div>
         </div>
         <aside class="gallery-side">
           <p class="side-k">Target</p>
           <svg id="gallery-target" aria-hidden="true"></svg>
-          <p class="gallery-note" id="gallery-note"></p>
           <a class="textlink" id="gallery-demo" href="demo/index.html">Watch it train&nbsp;→</a>
         </aside>
       </div>
@@ -186,7 +183,7 @@
       <p class="sec-lede">LeWi predicts the next state better than a dense network on 16 of 17 tasks.</p>
     </header>
     <div class="wm-scroll"><div id="wm" class="wm"></div></div>
-    <p class="note">Hover a cell or a task name to see the task.</p>
+    <p class="note">Hover a task to see it.</p>
   </div>
 </section>
 
@@ -211,7 +208,6 @@
         <p class="eyebrow">Paper</p>
         <h2 id="paper-h" class="paper-title">Learning Computational Structure for Sample&#8209;Efficient Prediction</h2>
         <p class="paper-authors"><a href="https://zhou-hangyu.github.io/">Hangyu Zhou</a><sup>1</sup>, <a href="https://sites.cc.gatech.edu/fac/constantinos.dovrolis/">Constantine Dovrolis</a><sup>2</sup>, <a href="https://steve.mussmann.us/">Steve Mussmann</a><sup>1</sup></p>
-        <p class="paper-venue">Preprint · 36 pages</p>
         <div class="actions">
           <a class="btn btn-primary" href="paper/lewi.pdf"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9.5M6 9l4 4 4-4M4 16.5h12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Download PDF<span class="meta">1.5 MB</span></a>
           <span class="btn btn-soon" aria-disabled="true"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6 3 10l4 4M13 6l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Code<span class="soon">coming soon</span></span>
@@ -243,12 +239,12 @@
 
 <div class="tip" id="tip" role="tooltip"></div>
 
-<script src="assets/data/hero.js?v=202610140918"></script>
-<script src="assets/data/pieces.js?v=202610140918" defer></script>
-<script src="assets/data/curves.js?v=202610140918" defer></script>
-<script src="assets/data/graphs.js?v=202610140918" defer></script>
-<script src="assets/data/gallery.js?v=202610140918" defer></script>
-<script src="assets/data/worldmodel.js?v=202610140918" defer></script>
-<script src="assets/js/site.js?v=202610140918" defer></script>
+<script src="assets/data/hero.js?v=202610140935"></script>
+<script src="assets/data/pieces.js?v=202610140935" defer></script>
+<script src="assets/data/curves.js?v=202610140935" defer></script>
+<script src="assets/data/graphs.js?v=202610140935" defer></script>
+<script src="assets/data/gallery.js?v=202610140935" defer></script>
+<script src="assets/data/worldmodel.js?v=202610140935" defer></script>
+<script src="assets/js/site.js?v=202610140935" defer></script>
 </body>
 </html>
