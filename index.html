@@ -19,27 +19,13 @@
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/plexsans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/fonts.css?v=202610140953">
-<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610140953">
-<link rel="stylesheet" href="assets/css/site.css?v=202610140953">
+<link rel="stylesheet" href="assets/css/fonts.css?v=202610141025">
+<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610141025">
+<link rel="stylesheet" href="assets/css/site.css?v=202610141025">
 </head>
 <body>
 
 <a class="skip" href="#motivation">Skip to content</a>
-
-<nav class="topnav" id="topnav" aria-label="Sections">
-  <div class="topnav-in">
-    <a class="brand" href="#top"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.8" class="mark-bg"/><path d="M12 7.2 6.5 17M12 7.2 17.5 17" class="mark-l"/><circle cx="12" cy="7.2" r="3.4" class="mark-n"/><circle cx="6.5" cy="17" r="3" class="mark-n"/><circle cx="17.5" cy="17" r="3" class="mark-n"/></svg>LeWi</a>
-    <div class="topnav-links">
-      <a href="#motivation">Motivation</a>
-      <a href="#method">How it works</a>
-      <a href="#results">Results</a>
-      <a href="#structure">Learned wiring</a>
-      <a href="#world-models">World models</a>
-      <a href="#cite">Cite</a>
-    </div>
-  </div>
-</nav>
 
 <header class="hero" id="top">
   <div class="hero-grid">
@@ -55,7 +41,7 @@
         <a class="btn btn-primary" href="paper/lewi.pdf"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h6.5L15 6v11.5H5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11.5 2.5V6H15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 10.5h5M7.5 13.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Paper</a>
         <a class="btn" href="demo/index.html"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8.3 7.2v5.6l4.6-2.8z" fill="currentColor"/></svg>Interactive demo</a>
         <span class="btn btn-soon" aria-disabled="true" title="The code will be released soon."><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6 3 10l4 4M13 6l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Code<span class="soon">coming soon</span></span>
-        <a class="btn" href="#cite"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 5.5h4v4c0 2.5-1.2 4-3.2 5M11.5 5.5h4v4c0 2.5-1.2 4-3.2 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>BibTeX</a>
+        <button type="button" class="btn" id="bib-open" aria-haspopup="dialog"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 5.5h4v4c0 2.5-1.2 4-3.2 5M11.5 5.5h4v4c0 2.5-1.2 4-3.2 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>BibTeX</button>
       </div>
     </div>
     <figure class="hero-visual" id="hero-visual">
@@ -71,7 +57,6 @@
 <section class="band" id="motivation" aria-labelledby="motivation-h">
   <div class="wrap">
     <header class="sec-head">
-      <p class="eyebrow">Motivation</p>
       <h2 id="motivation-h">Many functions are built from small pieces</h2>
       <p class="sec-lede">Learning the small pieces takes far less data than learning the whole function at once.</p>
     </header>
@@ -94,9 +79,8 @@
 <section class="band band-alt" id="gap" aria-labelledby="gap-h">
   <div class="wrap">
     <header class="sec-head">
-      <p class="eyebrow">The gap</p>
-      <h2 id="gap-h">Standard networks do not find the pieces</h2>
-      <p class="sec-lede">A network that is given the target&rsquo;s graph learns much faster. Dense networks and sparse baselines stay far behind. LeWi is not given the graph.</p>
+      <h2 id="gap-h">Standard networks miss most of this gain</h2>
+      <p class="sec-lede">A network given the target&rsquo;s graph learns much faster. Dense and sparse baselines stay far behind. LeWi is not given the graph.</p>
     </header>
     <div class="gapbox">
       <div class="seg" role="tablist" aria-label="Show LeWi">
@@ -113,7 +97,6 @@
     <div class="st-track" id="st-track">
       <div class="stepper" id="stepper">
         <header class="sec-head st-head">
-          <p class="eyebrow">How it works</p>
           <h2 id="method-h">Let the neurons find their partners</h2>
         </header>
         <div class="st-tabs" role="tablist" aria-label="Steps">
@@ -123,7 +106,7 @@
           <button type="button" class="st-tab" data-step="3" role="tab"><span>4</span><span class="st-tl">Moving rewires</span></button>
         </div>
         <div class="st-body">
-          <figure class="st-stage"><svg id="stepper-svg" role="img" aria-label="Neurons drawn as points in a two-dimensional embedding space."></svg></figure>
+          <figure class="st-stage"><svg id="stepper-svg" role="img" aria-label="Two layers of neurons become points in a space; nearby neurons connect; gradients move a neuron, which changes its connections."></svg></figure>
           <ol class="st-math">
             <li data-from="0"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6891em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathbf">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8641em;"></span><span class="mord"><span class="mord mathbb">R</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span></span></span></span></span></span></span></span></span><span class="cap">the learned position of neuron <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6595em;"></span><span class="mord mathnormal">i</span></span></span></span></span></li>
             <li data-from="1"><span class="katex-display"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7167em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal">s</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">ij</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.9474em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">∥</span><span class="mord"><span class="mord mathbf">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.1502em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathbf">e</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mclose"><span class="mclose">∥</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span><span class="cap">positive when <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6595em;"></span><span class="mord mathnormal">i</span></span></span></span> and <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.854em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05724em;">j</span></span></span></span> are within <span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.00773em;">R</span></span></span></span></span></li>
@@ -144,9 +127,8 @@
 <section class="band band-alt" id="results" aria-labelledby="results-h">
   <div class="wrap">
     <header class="sec-head">
-      <p class="eyebrow">Results</p>
       <h2 id="results-h">Fewer samples when the target has structure</h2>
-      <p class="sec-lede">The more the target decomposes into small pieces, the more LeWi helps.</p>
+      <p class="sec-lede">LeWi helps most when small pieces are stacked or reused.</p>
     </header>
     <figure class="pattern-fig"><svg id="pattern-svg" role="img" aria-label="Average test error of Dense, LeWi and GraphOracle on five target structures."></svg></figure>
   </div>
@@ -155,9 +137,8 @@
 <section class="band" id="structure" aria-labelledby="structure-h">
   <div class="wrap">
     <header class="sec-head">
-      <p class="eyebrow">Learned wiring</p>
-      <h2 id="structure-h">The wiring mirrors the target</h2>
-      <p class="sec-lede">Neurons that compute the same piece of the target end up close together.</p>
+      <h2 id="structure-h">The learned wiring aligns with the target</h2>
+      <p class="sec-lede">Neurons tied to the same piece of the target end up close together. Colors are assigned after training.</p>
     </header>
     <div class="gallery" id="gallery">
       <div class="gallery-tabs" id="gallery-tabs" role="tablist" aria-label="Target structure"></div>
@@ -179,29 +160,10 @@
 <section class="band band-alt" id="world-models" aria-labelledby="wm-h">
   <div class="wrap">
     <header class="sec-head">
-      <p class="eyebrow">Beyond the benchmark</p>
-      <h2 id="wm-h">It also helps world models</h2>
-      <p class="sec-lede">LeWi predicts the next state better than a dense network on 16 of 17 tasks.</p>
+      <h2 id="wm-h">It also helps world-model prediction</h2>
+      <p class="sec-lede">Over 16-step rollouts, LeWi beats a dense network on 16 of 17 tasks.</p>
     </header>
     <div class="wm-scroll"><div id="wm" class="wm"></div></div>
-    <p class="note">Hover a task to see it.</p>
-  </div>
-</section>
-
-<section class="band band-alt" id="cite-section" aria-label="Citation">
-  <div class="wrap">
-    <div class="bib" id="cite">
-      <p class="eyebrow">BibTeX</p>
-      <div class="bib-box">
-        <pre id="bibtex">@misc{zhou2026lewi,
-  title  = {Learning Computational Structure for Sample-Efficient Prediction},
-  author = {Zhou, Hangyu and Dovrolis, Constantine and Mussmann, Steve},
-  year   = {2026},
-  url    = {https://zhou-hangyu.github.io/lewi/}
-}</pre>
-        <button class="chip chip-copy" id="copy-bib" type="button">Copy</button>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -213,14 +175,28 @@
   </div>
 </footer>
 
+<dialog class="bib-dlg" id="bib-dlg" aria-labelledby="bib-dlg-h">
+  <div class="bib-dlg-head">
+    <p class="bib-dlg-h" id="bib-dlg-h">BibTeX</p>
+    <button class="chip chip-copy" id="copy-bib" type="button">Copy</button>
+    <button class="bib-x" id="bib-close" type="button" aria-label="Close"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  </div>
+  <pre id="bibtex">@misc{zhou2026lewi,
+  title  = {Learning Computational Structure for Sample-Efficient Prediction},
+  author = {Zhou, Hangyu and Dovrolis, Constantine and Mussmann, Steve},
+  year   = {2026},
+  url    = {https://zhou-hangyu.github.io/lewi/}
+}</pre>
+</dialog>
+
 <div class="tip" id="tip" role="tooltip"></div>
 
-<script src="assets/data/hero.js?v=202610140953"></script>
-<script src="assets/data/pieces.js?v=202610140953" defer></script>
-<script src="assets/data/curves.js?v=202610140953" defer></script>
-<script src="assets/data/graphs.js?v=202610140953" defer></script>
-<script src="assets/data/gallery.js?v=202610140953" defer></script>
-<script src="assets/data/worldmodel.js?v=202610140953" defer></script>
-<script src="assets/js/site.js?v=202610140953" defer></script>
+<script src="assets/data/hero.js?v=202610141025"></script>
+<script src="assets/data/pieces.js?v=202610141025" defer></script>
+<script src="assets/data/curves.js?v=202610141025" defer></script>
+<script src="assets/data/graphs.js?v=202610141025" defer></script>
+<script src="assets/data/gallery.js?v=202610141025" defer></script>
+<script src="assets/data/worldmodel.js?v=202610141025" defer></script>
+<script src="assets/js/site.js?v=202610141025" defer></script>
 </body>
 </html>

@@ -535,12 +535,23 @@
     var N = [[81, 60], [487, 98], [183, 182], [310, 161], [101, 254], [384, 298], [410, 397]];
     var O = [[550, 65], [525, 316], [102, 384]];
     var P0 = [282, 239], P1 = [209, 210], A = 2, C = 5;
-    var gR = el('g', {'class': 'sv-layer'}, svg), gLinks = el('g', null, svg), gGone = el('g', null, svg);
-    var gArrows = el('g', {'class': 'sv-layer'}, svg), gNodes = el('g', null, svg);
+    // Step 1 starts from the usual picture of two layers with every pair connected: the sending neurons (circles) in one
+    // column, the receiving ones (squares, e_i among them) in the next. The neurons then move to their positions.
+    function column(ps, x, y0, y1) {
+      var out = [];
+      ps.map(function (p, k) { return k; }).sort(function (a, b) { return ps[a][1] - ps[b][1]; })
+        .forEach(function (k, r) { out[k] = [x, y0 + r * (y1 - y0) / (ps.length - 1)]; });
+      return out;
+    }
+    var colN = column(N, 150, 50, 400), colO = column(O.concat([P0]), 490, 105, 345);
+    var gR = el('g', null, svg), gDense = el('g', null, svg), gLinks = el('g', null, svg), gGone = el('g', null, svg);
+    var gArrows = el('g', null, svg), gNodes = el('g', null, svg);
     var ringR = el('circle', {r: RAD, 'class': 'sv-r'}, gR);
-    var rLine = el('line', {'class': 'sv-rl'}, gR), rLab = txt(gR, 0, 0, 'R', 'sv-lab');
-    O.forEach(function (p) { el('rect', {x: p[0] - 9, y: p[1] - 9, width: 18, height: 18, 'class': 'sv-o'}, gNodes); });
-    var nodeEls = N.map(function (p) { return el('circle', {cx: p[0], cy: p[1], r: 10, 'class': 'sv-n'}, gNodes); });
+    var gRl = el('g', null, gR), rLine = el('line', {'class': 'sv-rl'}, gRl), rLab = txt(gRl, 0, 0, 'R', 'sv-lab');
+    var dense = [];
+    N.forEach(function (p, i) { [0, 1, 2, 3].forEach(function (j) { dense.push({i: i, j: j, l: el('line', {'class': 'sv-dense'}, gDense)}); }); });
+    var oEls = O.map(function () { return el('rect', {width: 18, height: 18, 'class': 'sv-o'}, gNodes); });
+    var nodeEls = N.map(function () { return el('circle', {r: 10, 'class': 'sv-n'}, gNodes); });
     var focusRing = el('circle', {r: 26, 'class': 'sv-ring'}, gNodes);
     var eNode = el('rect', {width: 22, height: 22, 'class': 'sv-e'}, gNodes);
     var eLab = sub(gNodes, 0, 0, 'e', 'i', 'sv-lab', {'text-anchor': 'middle'});
@@ -548,7 +559,11 @@
     var gone = el('line', {'class': 'sv-gone'}, gGone);
     var pullT = txt(gArrows, 0, 0, 'pull', 'sv-pull-t', {'text-anchor': 'middle'}), pushT = txt(gArrows, 0, 0, 'push', 'sv-push-t', {'text-anchor': 'middle'});
     var pullP = el('path', {'class': 'sv-pull'}, gArrows), pushP = el('path', {'class': 'sv-push'}, gArrows);
-    var st = {step: 0, e: P0.slice()}, sig = function (s) { return 1 / (1 + Math.exp(-s)); }, TOP = sig(1.5);
+    var st = {step: -1, u: 0, e: P0.slice()}, sig = function (s) { return 1 / (1 + Math.exp(-s)); }, TOP = sig(1.5);
+    function ramp(u, a, b) { return clamp((u - a) / (b - a), 0, 1); }
+    function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+    function lerp(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
+    function line(l, a, b) { l.setAttribute('x1', a[0]); l.setAttribute('y1', a[1]); l.setAttribute('x2', b[0]); l.setAttribute('y2', b[1]); }
     function chevrons(c, u, size) {
       var n = [-u[1], u[0]], d = '';
       [0, 11].forEach(function (off) {
@@ -558,49 +573,63 @@
       });
       return d;
     }
+    // Each step is a function of its share u (0 to 1) of the scroll, so every scroll changes the picture and the steps
+    // join without jumps: (1) the layers turn into points, (2) the radius appears and the links to the neurons inside it
+    // grow, nearest first, (3) the pull and the push run along their lines, (4) the neuron moves and its links follow.
     function draw() {
-      var e = st.e, s = st.step;
+      var s = st.step, u = st.u, m = s === 0 ? ease(ramp(u, 0.03, 0.9)) : 1;
+      var nP = N.map(function (p, i) { return lerp(colN[i], p, m); }), oP = O.map(function (p, j) { return lerp(colO[j], p, m); });
+      var e = s === 0 ? lerp(colO[3], P0, m) : st.e, rec = oP.concat([e]);
+      var fade = s === 0 ? 1 - ramp(u, 0, 0.4) : 0;
+      gDense.style.display = fade > 0 ? '' : 'none';
+      gDense.style.opacity = fade;
+      if (fade > 0) dense.forEach(function (d) { line(d.l, nP[d.i], rec[d.j]); });
+      nodeEls.forEach(function (c, i) { c.setAttribute('cx', nP[i][0]); c.setAttribute('cy', nP[i][1]); });
+      oEls.forEach(function (r, j) { r.setAttribute('x', oP[j][0] - 9); r.setAttribute('y', oP[j][1] - 9); });
       eNode.setAttribute('x', e[0] - 11); eNode.setAttribute('y', e[1] - 11);
       eLab.setAttribute('x', e[0]); eLab.setAttribute('y', e[1] + 42);
+      eLab.style.opacity = s === 0 ? ramp(u, 0.7, 1) : 1;
       focusRing.setAttribute('cx', e[0]); focusRing.setAttribute('cy', e[1]);
-      focusRing.style.opacity = s === 0 ? 1 : 0;
-      gR.style.opacity = s >= 1 ? 1 : 0;
+      focusRing.style.opacity = s === 0 ? ramp(u, 0.7, 1) : s === 1 ? 1 - ramp(u, 0, 0.2) : 0;
+      gR.style.opacity = s === 0 ? 0 : s === 1 ? ramp(u, 0, 0.25) : 1;
       ringR.setAttribute('cx', e[0]); ringR.setAttribute('cy', e[1]);
-      var ang = 2.95, rx = e[0] + RAD * Math.cos(ang), ry = e[1] + RAD * Math.sin(ang);
-      rLine.setAttribute('x1', e[0]); rLine.setAttribute('y1', e[1]); rLine.setAttribute('x2', rx); rLine.setAttribute('y2', ry);
-      rLine.style.opacity = s === 1 ? 1 : 0; rLab.style.opacity = s === 1 ? 1 : 0;
-      rLab.setAttribute('x', (e[0] + rx) / 2 - 4); rLab.setAttribute('y', (e[1] + ry) / 2 - 12);
-      N.forEach(function (p, i) {
-        var d = Math.hypot(p[0] - e[0], p[1] - e[1]) / RAD, on = s >= 1 && d < 1, l = links[i];
-        if (!on) { l.style.display = 'none'; return; }
-        var w = (sig(1.5 * (1 - d * d)) - 0.5) / (TOP - 0.5);
+      var ang = 2.95, rEnd = [e[0] + RAD * Math.cos(ang), e[1] + RAD * Math.sin(ang)];
+      line(rLine, e, rEnd);
+      rLab.setAttribute('x', (e[0] + rEnd[0]) / 2 - 4); rLab.setAttribute('y', (e[1] + rEnd[1]) / 2 - 12);
+      gRl.style.opacity = s === 1 ? ramp(u, 0.1, 0.35) : s === 2 ? 1 - ramp(u, 0, 0.2) : 0;
+      var near = N.map(function (p, i) { return {i: i, d: Math.hypot(p[0] - e[0], p[1] - e[1]) / RAD}; })
+        .filter(function (q) { return q.d < 1; }).sort(function (a, b) { return a.d - b.d; });
+      links.forEach(function (l) { l.style.display = 'none'; });
+      if (s >= 1) near.forEach(function (q, k) {
+        var g = s === 1 ? ramp(u, 0.15 + k * 0.25, 0.5 + k * 0.25) : 1, l = links[q.i];
+        if (g <= 0) return;
+        var w = (sig(1.5 * (1 - q.d * q.d)) - 0.5) / (TOP - 0.5);
         l.style.display = '';
-        l.setAttribute('x1', e[0]); l.setAttribute('y1', e[1]); l.setAttribute('x2', p[0]); l.setAttribute('y2', p[1]);
+        line(l, e, lerp(e, N[q.i], g));
         l.setAttribute('stroke-width', (2 + 4 * w).toFixed(2));
         l.setAttribute('stroke-opacity', (0.45 + 0.55 * w).toFixed(2));
       });
-      var dC = Math.hypot(N[C][0] - e[0], N[C][1] - e[1]);
-      gone.style.display = s === 3 && dC >= RAD ? '' : 'none';
-      gone.setAttribute('x1', e[0]); gone.setAttribute('y1', e[1]); gone.setAttribute('x2', N[C][0]); gone.setAttribute('y2', N[C][1]);
-      gArrows.style.opacity = s === 2 ? 1 : 0;
+      gone.style.display = s === 3 && Math.hypot(N[C][0] - e[0], N[C][1] - e[1]) >= RAD ? '' : 'none';
+      line(gone, e, N[C]);
+      gArrows.style.opacity = s === 2 ? ramp(u, 0, 0.2) : s === 3 ? 1 - ramp(u, 0, 0.2) : 0;
+      var f = s === 2 ? u : 1;
       var a = N[A], ua = [a[0] - e[0], a[1] - e[1]], la = Math.hypot(ua[0], ua[1]); ua = [ua[0] / la, ua[1] / la];
-      var ca = [e[0] + ua[0] * la * 0.5, e[1] + ua[1] * la * 0.5];
+      var ca = lerp(e, a, 0.25 + 0.45 * f);
       pullP.setAttribute('d', chevrons(ca, ua, 7));
       pullT.setAttribute('x', ca[0] - 18); pullT.setAttribute('y', ca[1] - 20);
       var c = N[C], uc = [e[0] - c[0], e[1] - c[1]], lc = Math.hypot(uc[0], uc[1]); uc = [uc[0] / lc, uc[1] / lc];
-      var cc = [e[0] - uc[0] * lc * 0.3, e[1] - uc[1] * lc * 0.3];
+      var cc = lerp(e, c, 0.6 - 0.28 * f);
       pushP.setAttribute('d', chevrons(cc, uc, 7));
       pushT.setAttribute('x', c[0] + 6); pushT.setAttribute('y', c[1] + 44);
     }
     // The figure is pinned while the reader scrolls through a track below it: each step owns an equal stretch of the
-    // track (SPAN of a viewport height), so scrolling down plays the steps and scrolling up plays them back. In step 4
-    // the neuron's move follows the scroll over the first MOVE of its stretch.
+    // track (SPAN of a viewport height), so scrolling down plays the steps and scrolling up plays them back.
     var tabs = box.querySelectorAll('.st-tab'), rows = box.querySelectorAll('.st-math li'), track = $('st-track');
-    var STEPS = 4, SPAN = 0.6, MOVE = 0.65, pinTop = 64, dragged = false, ticking = false;
-    st.step = -1;
+    var STEPS = 4, SPAN = 0.55, pinTop = 16, dragged = false, ticking = false;
     function setStep(i) {
       if (st.step === i) return;
       st.step = i;
+      eNode.style.cursor = i >= 1 ? 'grab' : '';
       tabs.forEach(function (t, k) { t.setAttribute('aria-selected', String(k === i)); });
       rows.forEach(function (r) {
         var from = +r.getAttribute('data-from');
@@ -608,10 +637,9 @@
         r.classList.toggle('past', from < i);
       });
     }
-    function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
     function layout() {
       var h = box.offsetHeight, vh = window.innerHeight || document.documentElement.clientHeight;
-      pinTop = Math.max(64, (vh - h) / 2);
+      pinTop = Math.max(16, (vh - h) / 2);
       box.style.top = pinTop + 'px';
       track.style.height = Math.round(h + STEPS * SPAN * vh) + 'px';
     }
@@ -621,31 +649,29 @@
     }
     function update() {
       ticking = false;
-      var p = progress() * STEPS, i = Math.min(STEPS - 1, Math.floor(p)), sub = clamp(p - i, 0, 1);
+      var p = progress() * STEPS, i = Math.min(STEPS - 1, Math.floor(p));
       setStep(i);
-      if (!dragged) {
-        var k = i === 3 ? ease(clamp(sub / MOVE, 0, 1)) : 0;
-        st.e = [P0[0] + (P1[0] - P0[0]) * k, P0[1] + (P1[1] - P0[1]) * k];
-      }
+      st.u = clamp(p - i, 0, 1);
+      if (!dragged) st.e = i === 3 ? lerp(P0, P1, ease(st.u)) : P0.slice();
       draw();
     }
     function later() { dragged = false; if (!ticking) { ticking = true; requestAnimationFrame(update); } }
     window.addEventListener('scroll', later, {passive: true});
     window.addEventListener('resize', function () { layout(); later(); });
     window.addEventListener('load', function () { layout(); later(); });
-    // a tab scrolls the page to its step
+    // a tab scrolls the page to the end of its step
     tabs.forEach(function (t, k) {
       t.addEventListener('click', function () {
         var total = track.offsetHeight - box.offsetHeight;
-        var y = window.scrollY + track.getBoundingClientRect().top - pinTop + (k + (k === 3 ? 0.8 : 0.4)) / STEPS * total;
+        var y = window.scrollY + track.getBoundingClientRect().top - pinTop + (k + 0.97) / STEPS * total;
         window.scrollTo({top: Math.round(y), behavior: REDUCE ? 'auto' : 'smooth'});
       });
     });
-    // the reader can drag the neuron e_i: the connections follow until the next scroll
+    // from step 2 on, the reader can drag the neuron e_i: the connections follow until the next scroll
     function toSvg(ev) { var pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
     var drag = false;
-    eNode.style.cursor = 'grab';
     eNode.addEventListener('pointerdown', function (ev) {
+      if (st.step < 1) return;
       ev.preventDefault();
       drag = true; dragged = true;
       window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
@@ -664,7 +690,7 @@
                 {wl: 'dag_functional_anova', g: 'Depth-3 reuse DAG', label: 'Reuse DAG'},
                 {wl: 'rand_functional_anova', g: 'Sampled depth-4 DAG', label: 'Sampled DAGs'},
                 {wl: 'flat_functional_anova', g: 'Flat modules', label: 'Flat modules', note: 'smaller gain'},
-                {wl: 'dense_fourier', g: 'High-arity node', label: 'High-arity node', note: 'Dense better'}];
+                {wl: 'dense_fourier', g: 'High-arity node', label: 'High-arity node', note: 'Dense better', oracleIsDense: true}];
     var W = 1000, top = 70, rowH = 70, H = top + ROWS.length * rowH + 64, px0 = 400, px1 = 800, XMAX = 0.7;
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     function X(v) { return px0 + v / XMAX * (px1 - px0); }
@@ -685,16 +711,22 @@
       var y = top + i * rowH + 10;
       var dense = aulc(armOf(P, function (a) { return a.kind === 'dense'; }).points);
       var lewi = aulc(armOf(P, function (a) { return a.kind === 'lewi'; }).points);
-      var oa = armOf(P, function (a) { return a.key === 'graph_oracle(levels=all)'; }), oracle = oa ? aulc(oa.points) : null;
+      // the high-arity target is one node that reads every input: GraphOracle's masks keep every connection there, so it
+      // is the Dense network (the paper runs no separate arm)
+      var oa = armOf(P, function (a) { return a.key === 'graph_oracle(levels=all)'; });
+      var oracle = oa ? aulc(oa.points) : row.oracleIsDense ? dense : null;
       var g = (G || []).filter(function (x) { return x.title === row.g; })[0];
       if (g) icon(g, 10, y - 24, 110, 48);
       txt(svg, 140, y + 6, row.label, 'pt-row');
-      if (oracle !== null) el('rect', {x: X(oracle), y: y - 6, width: X(dense) - X(oracle), height: 12, rx: 6, 'class': 'pt-band'}, svg);
+      if (oracle !== null && X(dense) - X(oracle) >= 1) el('rect', {x: X(oracle), y: y - 6, width: X(dense) - X(oracle), height: 12, rx: 6, 'class': 'pt-band'}, svg);
       var dots = [[dense, 'var(--dense)', 9, 'Dense'], [lewi, 'var(--lewi)', 10, 'LeWi']];
-      if (oracle !== null) dots.unshift([oracle, 'var(--oracle)', 8, 'GraphOracle']);
+      if (oracle !== null) dots.unshift([oracle, 'var(--oracle)', 8, 'GraphOracle', row.oracleIsDense ? 'Keeps every connection here, so it is Dense.' : '']);
+      // dots that would overlap are spread over the row's height: GraphOracle above, Dense below
+      var tight = dots.some(function (a, k) { return dots.some(function (b, l) { return k < l && Math.abs(X(a[0]) - X(b[0])) < 20; }); });
+      var DY = {GraphOracle: -18, LeWi: 0, Dense: 19};
       dots.forEach(function (d) {
-        var c = el('circle', {cx: X(d[0]), cy: y, r: d[2], fill: d[1], stroke: 'var(--paper-2)', 'stroke-width': 2}, svg);
-        c.addEventListener('pointermove', function (ev) { showTip('<div class="tt-h">' + row.label + '</div><div>' + d[3] + ': ' + d[0].toFixed(3) + '</div>', ev.clientX, ev.clientY); });
+        var c = el('circle', {cx: X(d[0]), cy: y + (tight ? DY[d[3]] : 0), r: d[2], fill: d[1], stroke: 'var(--paper-2)', 'stroke-width': 2}, svg);
+        c.addEventListener('pointermove', function (ev) { showTip('<div class="tt-h">' + row.label + '</div><div>' + d[3] + ': ' + d[0].toFixed(3) + '</div>' + (d[4] ? '<div class="tt-dim">' + d[4] + '</div>' : ''), ev.clientX, ev.clientY); });
         c.addEventListener('pointerleave', hideTip);
       });
       if (row.note) txt(svg, 830, y + 6, row.note, row.note === 'Dense better' ? 'pt-note' : 'pt-vs');
@@ -866,21 +898,14 @@
     requestAnimationFrame(loop);
   }
 
-  // ------------------------------------------------------------------ navigation and small behaviours
-  function nav() {
-    var navEl = $('topnav'), heroEl = $('top');
-    if (!navEl || !heroEl || !('IntersectionObserver' in window)) return;
-    new IntersectionObserver(function (es) { es.forEach(function (e) { navEl.classList.toggle('show', !e.isIntersecting); }); },
-                             {rootMargin: '-64px 0px 0px 0px'}).observe(heroEl);
-    var links = {};
-    navEl.querySelectorAll('.topnav-links a').forEach(function (a) { links[a.getAttribute('href').slice(1)] = a; });
-    var io = new IntersectionObserver(function (es) {
-      es.forEach(function (e) {
-        if (!e.isIntersecting || !links[e.target.id]) return;
-        for (var k in links) links[k].classList.toggle('active', k === e.target.id);
-      });
-    }, {rootMargin: '-35% 0px -60% 0px'});
-    Object.keys(links).forEach(function (id) { var s = $(id); if (s) io.observe(s); });
+  // ------------------------------------------------------------------ the BibTeX dialog behind the hero button
+  function bibDialog() {
+    var dlg = $('bib-dlg'), open = $('bib-open'), close = $('bib-close');
+    if (!dlg || !open) return;
+    function shut() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
+    open.addEventListener('click', function () { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); });
+    if (close) close.addEventListener('click', shut);
+    dlg.addEventListener('click', function (ev) { if (ev.target === dlg) shut(); });
   }
   function copyBib() {
     var btn = $('copy-bib'), pre = $('bibtex');
@@ -904,7 +929,6 @@
 
   function safe(fn) { try { fn(); } catch (err) { if (window.console) console.error(err); } }
   window.__lewi = {Net: Net, Viewer: Viewer, targetGraph: targetGraph};
-  safe(nav);
   safe(sheet);
   safe(hero);
   safe(piecesFig);
@@ -913,6 +937,7 @@
   safe(patternFig);
   safe(gallery);
   safe(worldModel);
+  safe(bibDialog);
   safe(copyBib);
   onTheme(worldModel);
 })();
