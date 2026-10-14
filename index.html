@@ -19,9 +19,9 @@
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/plexsans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/fonts.css?v=202610141045">
-<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610141045">
-<link rel="stylesheet" href="assets/css/site.css?v=202610141045">
+<link rel="stylesheet" href="assets/css/fonts.css?v=202610141419">
+<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610141419">
+<link rel="stylesheet" href="assets/css/site.css?v=202610141419">
 </head>
 <body>
 
@@ -30,7 +30,6 @@
 <header class="hero" id="top">
   <div class="hero-grid">
     <div class="hero-copy">
-      <p class="lockup"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.8" class="mark-bg"/><path d="M12 7.2 6.5 17M12 7.2 17.5 17" class="mark-l"/><circle cx="12" cy="7.2" r="3.4" class="mark-n"/><circle cx="6.5" cy="17" r="3" class="mark-n"/><circle cx="17.5" cy="17" r="3" class="mark-n"/></svg><span class="lockup-name">LeWi</span><span class="lockup-sub">Learned Wiring</span></p>
       <h1 class="title">Learning Computational Structure for Sample&#8209;Efficient Prediction</h1>
       <p class="tldr">Neurons get learned positions and connect only when close, so the network learns its own wiring.</p>
       <div class="byline">
@@ -45,9 +44,9 @@
       </div>
     </div>
     <figure class="hero-visual" id="hero-visual">
-      <canvas id="hero-net" role="img" aria-label="Animation of a real LeWi training run: the neurons of a network learning a depth-4 tree move from random positions into groups that match the target computation. Drag to rotate."></canvas>
+      <canvas id="hero-net" role="img" aria-label="Real LeWi training runs on six targets, one after another: the neurons move from random positions into groups that match the target computation. Drag to rotate."></canvas>
       <div class="hv-target" aria-hidden="true"><span class="hv-target-label">Target</span><svg id="hero-target"></svg></div>
-      <figcaption class="vh">A LeWi network learning a depth-4 tree. Each point is a neuron at its learned 3-D position and each line an active connection; colors show which piece of the target each neuron is associated with.</figcaption>
+      <figcaption class="vh">LeWi networks learning six targets in turn: a depth-4 tree, a reuse DAG, a sampled DAG, flat modules, a high-arity node and a depth-5 tree. Each point is a neuron at its learned 3-D position and each line an active connection; colors show which piece of the target each neuron is associated with.</figcaption>
     </figure>
   </div>
 </header>
@@ -169,12 +168,6 @@
 
 </main>
 
-<footer class="foot">
-  <div class="wrap foot-in">
-    <p class="foot-brand"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.8" class="mark-bg"/><path d="M12 7.2 6.5 17M12 7.2 17.5 17" class="mark-l"/><circle cx="12" cy="7.2" r="3.4" class="mark-n"/><circle cx="6.5" cy="17" r="3" class="mark-n"/><circle cx="17.5" cy="17" r="3" class="mark-n"/></svg>LeWi · Learned Wiring</p>
-  </div>
-</footer>
-
 <dialog class="bib-dlg" id="bib-dlg" aria-labelledby="bib-dlg-h">
   <div class="bib-dlg-head">
     <p class="bib-dlg-h" id="bib-dlg-h">BibTeX</p>
@@ -191,12 +184,12 @@
 
 <div class="tip" id="tip" role="tooltip"></div>
 
-<script src="assets/data/hero.js?v=202610141045"></script>
-<script src="assets/data/pieces.js?v=202610141045" defer></script>
-<script src="assets/data/curves.js?v=202610141045" defer></script>
-<script src="assets/data/graphs.js?v=202610141045" defer></script>
-<script src="assets/data/gallery.js?v=202610141045" defer></script>
-<script src="assets/data/worldmodel.js?v=202610141045" defer></script>
-<script src="assets/js/site.js?v=202610141045" defer></script>
+<script src="assets/data/hero.js?v=202610141419"></script>
+<script src="assets/data/pieces.js?v=202610141419" defer></script>
+<script src="assets/data/curves.js?v=202610141419" defer></script>
+<script src="assets/data/graphs.js?v=202610141419" defer></script>
+<script src="assets/data/gallery.js?v=202610141419" defer></script>
+<script src="assets/data/worldmodel.js?v=202610141419" defer></script>
+<script src="assets/js/site.js?v=202610141419" defer></script>
 </body>
 </html>

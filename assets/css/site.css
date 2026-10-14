@@ -110,12 +110,8 @@ h3 { text-wrap: balance; }
 .katex-display { margin: 0.5rem 0 0.7rem; text-align: left; overflow-x: auto; overflow-y: hidden; padding: 0.15rem 0 0.3rem; }
 .katex-display > .katex { text-align: left; }
 
-/* ------------------------------------------------------------------ mark and buttons */
+/* ------------------------------------------------------------------ buttons */
 
-.mark { width: 1.3em; height: 1.3em; flex: none; overflow: visible; }
-.mark-bg { fill: var(--lewi); }
-.mark-l { fill: none; stroke: #fff; stroke-opacity: 0.8; stroke-width: 1.9; stroke-linecap: round; }
-.mark-n { fill: #fff; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .btn {
@@ -144,10 +140,6 @@ button.btn { cursor: pointer; }
   display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(2rem, 4.5vw, 5rem); align-items: center;
   min-height: min(100svh, 920px);
 }
-.lockup { display: flex; align-items: center; gap: 0.55rem; margin: 0 0 1.6rem; font: 500 0.98rem var(--sans); color: var(--muted); }
-.lockup .mark { width: 1.55em; height: 1.55em; color: var(--ink-2); }
-.lockup-name { color: var(--ink); font-weight: 600; letter-spacing: 0.01em; }
-.lockup-sub::before { content: "·"; margin: 0 0.5rem 0 0.1rem; color: var(--faint); }
 .title { font: 380 clamp(2.3rem, 1.25rem + 2.6vw, 3.6rem)/1.06 var(--serif); font-variation-settings: "opsz" 72; letter-spacing: -0.022em; margin: 0 0 1.4rem; text-wrap: balance; color: var(--ink); }
 .tldr { font: 400 clamp(1.14rem, 1rem + 0.4vw, 1.32rem)/1.55 var(--serif); color: var(--ink-2); max-width: 33rem; margin: 0 0 2rem; }
 .byline { margin: 0 0 1.9rem; font-family: var(--sans); }
@@ -345,14 +337,6 @@ button.btn { cursor: pointer; }
 .bib-x svg { width: 1.1rem; height: 1.1rem; }
 .bib-dlg pre { font: 400 0.8rem/1.7 var(--mono); color: var(--ink-2); margin: 0; padding: 1.1rem 1.3rem 1.3rem; overflow-x: auto; white-space: pre; }
 .chip-copy.done { border-color: var(--oracle); color: var(--oracle); }
-
-/* ------------------------------------------------------------------ footer */
-
-.foot { background: transparent; color: var(--muted); padding: 2.4rem 0 2.8rem; font: 400 0.88rem/1.6 var(--sans); }
-.foot-in { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
-.foot p { margin: 0; }
-.foot-brand { display: flex; align-items: center; gap: 0.55rem; color: var(--ink); font-weight: 500; }
-.foot-brand .mark { color: var(--ink-2); }
 
 /* ------------------------------------------------------------------ tooltip */
 

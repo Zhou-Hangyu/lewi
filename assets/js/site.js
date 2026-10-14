@@ -299,26 +299,54 @@
     el('circle', {cx: X(outX), cy: Y(top), r: nr, 'class': 'tg-out'}, svg);
   }
 
-  // ------------------------------------------------------------------ hero: one real training run, replayed
+  // ------------------------------------------------------------------ hero: real training runs, replayed one after another
+  // The depth-4 tree comes with the page (hero.js); the other gallery runs load one at a time while the hero plays
+  // (teaser-<run>.js). Each run plays from the first step to the last, holds, and fades into the next.
   function hero() {
-    var run = window.LEWI_HERO, cv = $('hero-net');
-    if (!run || !cv) return;
-    var net = new Net(run);
-    if ($('hero-target')) targetGraph($('hero-target'), run.teacher, {width: 132, levelH: 21});
-    var view = new Viewer(cv, {yaw: run.view.yaw, pitch: run.view.pitch, sway: REDUCE ? null : {amp: 0.6, rate: 0.2}, fill: 0.42});
+    var first = window.LEWI_HERO, cv = $('hero-net'), plate = document.querySelector('.hv-target');
+    if (!first || !cv) return;
+    var ORDER = ['tree', 'dag', 'rand', 'flat', 'dense', 'tree5'], runs = {tree: first}, nets = {}, asked = {};
+    var tag = document.querySelector('script[src*="assets/data/hero.js"]'), ver = tag ? (tag.src.split('?')[1] || '') : '';
+    var view = new Viewer(cv, {yaw: first.view.yaw, pitch: first.view.pitch, sway: REDUCE ? null : {amp: 0.6, rate: 0.2}, fill: 0.42});
     var style = {edgeWidth: 0.7, edgeAlpha: 0.24, edgeAlphaDim: 0.07, radius: 3.5, dimAlpha: 0.55, cube: false, dx: -0.04, dy: 0.06};
-    var F = net.frames, total = run.total_steps, per = total / (F - 1);
     var PLAY = 17000, HOLD = 4500, FADE = 450, GAMMA = 1.8;
-    var st = {playing: !REDUCE, phase: 'play', t: 0, step: REDUCE ? run.best_step : 0};
+    var k = 0, run = null, net = null, st = {playing: !REDUCE, phase: 'play', t: 0, step: 0};
+    function load(stem) {
+      if (runs[stem] || asked[stem]) return;
+      asked[stem] = true;
+      var s = document.createElement('script');
+      s.src = 'assets/data/teaser-' + stem + '.js' + (ver ? '?' + ver : '');
+      s.onload = function () { if (window.LEWI_TEASER && window.LEWI_TEASER[stem]) runs[stem] = window.LEWI_TEASER[stem]; };
+      document.head.appendChild(s);
+    }
+    function use(i) {
+      k = i;
+      run = runs[ORDER[k]];
+      net = nets[ORDER[k]] || (nets[ORDER[k]] = new Net(run));
+      var big = run.counts[1] > 32;
+      style.radius = big ? 2.2 : 3.5;
+      style.edgeAlpha = big ? 0.07 : 0.24;
+      style.edgeAlphaDim = big ? 0.025 : 0.07;
+      if ($('hero-target')) targetGraph($('hero-target'), run.teacher, big ? {width: 132, levelH: 15, nodeR: 3.3, leafR: 1.5, pad: 5} : {width: 132, levelH: 21});
+      view.setView(run.view.yaw, run.view.pitch);
+      load(ORDER[(k + 1) % ORDER.length]);
+    }
+    // the frames around a training step (the runs' snapshots need not be evenly spaced)
     function frameOf(step) {
-      var x = clamp(step / per, 0, F - 1), a = Math.floor(x);
-      return [a, Math.min(F - 1, a + 1), x - a];
+      var s = run.steps, lo = 0, hi = s.length - 1;
+      if (step <= s[0]) return [0, 0, 0];
+      if (step >= s[hi]) return [hi, hi, 0];
+      while (hi - lo > 1) { var mid = (lo + hi) >> 1; if (s[mid] <= step) lo = mid; else hi = mid; }
+      return [lo, hi, (step - s[lo]) / (s[hi] - s[lo])];
     }
     function render() {
       view.resize();
       var fr = frameOf(st.step);
       view.draw(net, fr[0], fr[1], fr[2], Math.round(fr[0] + fr[2]), style);
     }
+    function fade(a) { cv.style.opacity = a; if (plate) plate.style.opacity = a; }
+    use(0);
+    if (REDUCE) st.step = run.best_step;
     var visible = true, last = performance.now();
     onVisible(cv, function (v) { visible = v; });
     onTheme(function () { view.dirty = true; render(); });
@@ -329,14 +357,18 @@
         if (st.playing) {
           st.t += dt;
           if (st.phase === 'play') {
-            st.step = total * Math.pow(clamp(st.t / PLAY, 0, 1), GAMMA);
-            cv.style.opacity = st.t < FADE ? String(st.t / FADE) : '';
+            st.step = run.total_steps * Math.pow(clamp(st.t / PLAY, 0, 1), GAMMA);
+            fade(st.t < FADE ? String(st.t / FADE) : '');
             if (st.t >= PLAY) { st.phase = 'hold'; st.t = 0; }
           } else if (st.phase === 'hold') {
             if (st.t >= HOLD) { st.phase = 'fade'; st.t = 0; }
           } else {
-            cv.style.opacity = String(1 - st.t / FADE);
-            if (st.t >= FADE) { st.phase = 'play'; st.t = 0; st.step = 0; }
+            fade(String(Math.max(0, 1 - st.t / FADE)));
+            if (st.t >= FADE) {
+              var next = (k + 1) % ORDER.length;
+              if (runs[ORDER[next]]) use(next);      // a run still loading is skipped for one turn
+              st.phase = 'play'; st.t = 0; st.step = 0;
+            }
           }
         }
         view.tick(dt / 1000, now);
@@ -347,7 +379,6 @@
     render();
     requestAnimationFrame(loop);
   }
-
   // ------------------------------------------------------------------ helpers shared by the new figures
   function sub(parent, x, y, base, index, cls, extra) {
     var t = txt(parent, x, y, base, cls, extra);

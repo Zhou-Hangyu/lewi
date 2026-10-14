@@ -49,7 +49,7 @@
     {stem: 'dag', group: 'gallery', label: 'Reuse DAG', note: 'two nodes read twice',
      target: 'a reuse DAG over eight inputs, in which two nodes feed two others',
      intro: 'a reuse DAG target', view: {spin: SPIN, zoom: 1}},
-    {stem: 'rand', group: 'gallery', label: 'Sampled DAGs', note: 'a random seven-node graph',
+    {stem: 'rand', group: 'gallery', label: 'Sampled DAG', note: 'a random seven-node graph',
      target: 'a sampled seven-node DAG over eight inputs', intro: 'a sampled DAG target',
      view: {spin: SPIN, zoom: 1}},
     {stem: 'flat', group: 'gallery', label: 'Flat modules', note: 'four modules, summed',

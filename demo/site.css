@@ -1,0 +1,21 @@
+/* The site's copy of the demo: the project page's type and ground over the demo's own style.css. */
+:root {
+  --paper: #f7f8fa;
+  --body: "IBM Plex Sans", "Helvetica Neue", Helvetica, sans-serif;
+  --ui: "IBM Plex Sans", "Helvetica Neue", Helvetica, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --prose: #474f5e;
+}
+body { background: transparent; }
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(to bottom left, rgba(242, 107, 29, 0.1) 0%, transparent 48%, transparent 52%, rgba(0, 114, 178, 0.085) 100%);
+}
+.wrap { padding-top: clamp(2.6rem, 1.6rem + 4vw, 4.6rem); }
+.masthead h1 { font: 380 clamp(2.3rem, 1.4rem + 2.4vw, 3.3rem)/1.06 var(--serif); font-variation-settings: "opsz" 72; letter-spacing: -0.022em; margin: 0 0 1rem; }
+.masthead > .subtitle { font: 400 clamp(1.14rem, 1rem + 0.4vw, 1.32rem)/1.55 var(--serif); color: var(--prose); margin: 0 0 0.35rem; }
+.masthead > .lede { font: 400 1.08rem/1.6 var(--serif); color: var(--prose); margin: 0 0 1.7rem; }
+.rgcap { display: none; }
+h2 { font: 400 clamp(1.75rem, 1.25rem + 1.4vw, 2.3rem)/1.1 var(--serif); font-variation-settings: "opsz" 72; letter-spacing: -0.02em; margin: 0 0 0.7rem; }
+.cap { font: 400 1.06rem/1.6 var(--serif); color: var(--prose); margin: 0 0 1.4rem; }
