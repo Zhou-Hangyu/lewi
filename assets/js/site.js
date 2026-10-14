@@ -123,6 +123,17 @@
     return arr;
   };
   Net.prototype.activeShare = function (f) { return this.edges(f).length / 2 / this.P; };
+  // the farthest neuron from the centre and the largest coordinate, over every frame
+  Net.prototype.bounds = function () {
+    if (this.b) return this.b;
+    var xyz = this.xyz, k = this.scale, reach = 0, ext = 0;
+    for (var i = 0; i < xyz.length; i += 3) {
+      var x = xyz[i] * k, y = xyz[i + 1] * k, z = xyz[i + 2] * k;
+      reach = Math.max(reach, Math.sqrt(x * x + y * y + z * z));
+      ext = Math.max(ext, Math.abs(x), Math.abs(y), Math.abs(z));
+    }
+    return (this.b = {reach: reach, ext: ext});
+  };
 
   function marker(ctx, shape, x, y, r) {
     ctx.beginPath();
@@ -162,6 +173,7 @@
       self.yaw = self.drag.yaw + (e.clientX - self.drag.x) * 0.0085;
       self.pitch = clamp(self.drag.pitch + (e.clientY - self.drag.y) * 0.0065, -1.25, 1.25);
       self.lastUser = performance.now();
+      self.turned = true;
       self.dirty = true;
     });
     function end() {
@@ -187,14 +199,54 @@
     if (this.sway) { this.phase += dt * this.sway.rate; this.yaw = this.baseYaw + this.sway.amp * Math.sin(this.phase); this.dirty = true; }
     else if (this.spin) { this.yaw += this.spin * dt; this.dirty = true; }
   };
-  Viewer.prototype.setView = function (yaw, pitch) { this.yaw = this.baseYaw = yaw; this.pitch = pitch; this.phase = 0; this.dirty = true; };
+  Viewer.prototype.setView = function (yaw, pitch) { this.yaw = this.baseYaw = yaw; this.pitch = pitch; this.phase = 0; this.turned = false; this.dirty = true; };
+  // The fitted scale (st.fit) keeps every neuron, and the cube when drawn, inside the canvas. While the view follows its
+  // own sway it uses the largest extent over the sway range (every frame, each axis); once the reader has turned the
+  // view it uses the bound for any angle: under perspective a point at distance R projects at most R / sqrt(1 - (R/depth)^2)
+  // from the centre. The scale eases from one to the other.
+  Viewer.prototype.fitTarget = function (net, st, W, H, C, depth) {
+    var pad = st.pad || 12, rx = W / 2 - Math.abs(st.dx || 0) * W - pad, ry = H / 2 - Math.abs(st.dy || 0) * H - pad;
+    var cube = st.cube !== false;
+    if (this.turned || !this.sway) {
+      var R = cube ? Math.sqrt(3) * C : net.bounds().reach, rho = Math.min(0.9, R / depth);
+      return Math.max(1, Math.min(rx, ry)) * Math.sqrt(1 - rho * rho) / R;
+    }
+    var e = this.ext;
+    if (!e || e.net !== net || e.base !== this.baseYaw || e.pitch !== this.pitch || e.cube !== cube || e.C !== C) {
+      e = this.ext = {net: net, base: this.baseYaw, pitch: this.pitch, cube: cube, C: C, x: 1e-6, y: 1e-6};
+      var cp = Math.cos(this.pitch), sp = Math.sin(this.pitch), xyz = net.xyz, k = net.scale, U = net.U, F = net.frames;
+      var fs = F > 100 ? 2 : 1, corners = [];
+      for (var i = 0; i < 8; i++) corners.push([i & 1 ? C : -C, i & 2 ? C : -C, i & 4 ? C : -C]);
+      for (var yi = 0; yi <= 16; yi++) {
+        var yaw = this.baseYaw + this.sway.amp * (yi / 8 - 1), cy = Math.cos(yaw), sy = Math.sin(yaw);
+        var reach = function (x, y, z) {
+          var x1 = cy * x + sy * z, z1 = -sy * x + cy * z, y1 = cp * y - sp * z1, g = 1 / (1 - (sp * y + cp * z1) / depth);
+          e.x = Math.max(e.x, Math.abs(x1 * g)); e.y = Math.max(e.y, Math.abs(y1 * g));
+        };
+        if (cube) corners.forEach(function (q) { reach(q[0], q[1], q[2]); });
+        for (var f = 0; f < F; f += fs) {
+          for (var u = 0; u < U; u++) { var j = (f * U + u) * 3; reach(xyz[j] * k, xyz[j + 1] * k, xyz[j + 2] * k); }
+        }
+      }
+    }
+    return Math.max(1, Math.min(rx / e.x, ry / e.y));
+  };
   // positions are interpolated between frames fa and fb (weight t); masks and colors come from frame fm
   Viewer.prototype.draw = function (net, fa, fb, t, fm, st) {
     var ctx = this.ctx, W = this.W, H = this.H, U = net.U, xyz = net.xyz, k = net.scale;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
     var cy = Math.cos(this.yaw), sy = Math.sin(this.yaw), cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
-    var lim = net.run.lim3, s = Math.min(W, H) * this.fill / lim * this.zoom, depth = lim * 7;
+    var lim = net.run.lim3, s = Math.min(W, H) * this.fill / lim * this.zoom, depth = lim * 7, C = lim * 0.92;
+    // fitted: the scale that keeps every neuron (and the cube, when drawn) inside the canvas at any rotation; under
+    // perspective a point at distance R from the centre projects at most R / sqrt(1 - (R / depth)^2) from it
+    if (st.fit) {
+      if (st.cube !== false) C = net.bounds().ext * 1.04;
+      var target = this.fitTarget(net, st, W, H, C, depth);
+      this.fitS = this.fitNet === net && this.fitS ? this.fitS + (target - this.fitS) * 0.12 : target;
+      this.fitNet = net;
+      s = this.fitS * this.zoom;
+    }
     var ox = W / 2 + (st.dx || 0) * W, oy = H / 2 + (st.dy || 0) * H;
     if (!this.P || this.P.length !== U * 3) { this.P = new Float32Array(U * 3); this.order = new Array(U); }
     var P = this.P, u, i;
@@ -209,7 +261,7 @@
       P[u * 3] = ox + x1 * s * g; P[u * 3 + 1] = oy - y1 * s * g; P[u * 3 + 2] = z2;
     }
     // the cube the embedding lives in, drawn faintly for depth (the hero leaves it out)
-    var C = lim * 0.92, corners = [];
+    var corners = [];
     for (i = 0; i < 8; i++) {
       var cx = i & 1 ? C : -C, cyy = i & 2 ? C : -C, cz = i & 4 ? C : -C;
       var a1 = cy * cx + sy * cz, b1 = -sy * cx + cy * cz, a2 = cp * cyy - sp * b1, b2 = sp * cyy + cp * b1, gg = 1 / (1 - b2 / depth);
@@ -308,7 +360,7 @@
     var ORDER = ['tree', 'dag', 'rand', 'flat', 'dense', 'tree5'], runs = {tree: first}, nets = {}, asked = {};
     var tag = document.querySelector('script[src*="assets/data/hero.js"]'), ver = tag ? (tag.src.split('?')[1] || '') : '';
     var view = new Viewer(cv, {yaw: first.view.yaw, pitch: first.view.pitch, sway: REDUCE ? null : {amp: 0.6, rate: 0.2}, fill: 0.42});
-    var style = {edgeWidth: 0.7, edgeAlpha: 0.24, edgeAlphaDim: 0.07, radius: 3.5, dimAlpha: 0.55, cube: false, dx: -0.04, dy: 0.06};
+    var style = {edgeWidth: 0.7, edgeAlpha: 0.24, edgeAlphaDim: 0.07, radius: 3.5, dimAlpha: 0.55, cube: false, fit: true, pad: 10, dx: -0.02, dy: 0.03};
     var PLAY = 17000, HOLD = 4500, FADE = 450, GAMMA = 1.8;
     var k = 0, run = null, net = null, st = {playing: !REDUCE, phase: 'play', t: 0, step: 0};
     function load(stem) {
@@ -563,9 +615,12 @@
     el('stop', {offset: '75%', 'stop-color': 'currentColor', 'stop-opacity': 0.07}, gr);
     el('stop', {offset: '100%', 'stop-color': 'currentColor', 'stop-opacity': 0.03}, gr);
     el('rect', {x: 0, y: 0, width: W, height: H, 'class': 'sv-field'}, svg);
-    var N = [[81, 60], [487, 98], [183, 182], [310, 161], [101, 254], [384, 298], [410, 397]];
+    var N = [[81, 60], [487, 98], [183, 182], [310, 161], [101, 254], [370, 285], [410, 397]];
     var O = [[550, 65], [525, 316], [102, 384]];
-    var P0 = [282, 239], P1 = [209, 210], A = 2, C = 5;
+    var P0 = [282, 239], P1 = [209, 210], A = 2, C = 5, MID = 0.4;
+    // the force of each linked neuron on e_i: +1 pulls, -1 pushes, with its strength; together they move e_i from P0
+    // towards P1, step 3 over the first MID of the way, step 4 over the rest (where C drops out and neuron 4 joins)
+    var FORCE = {2: [1, 1], 3: [-1, 0.35], 5: [-1, 1]};
     // Step 1 starts from the usual picture of two layers with every pair connected: the sending neurons (circles) in one
     // column, the receiving ones (squares, e_i among them) in the next. The neurons then move to their positions.
     function column(ps, x, y0, y1) {
@@ -588,16 +643,19 @@
     var eLab = sub(gNodes, 0, 0, 'e', 'i', 'sv-lab', {'text-anchor': 'middle'});
     var links = N.map(function () { return el('line', {'class': 'sv-link'}, gLinks); });
     var gone = el('line', {'class': 'sv-gone'}, gGone);
-    var pullT = txt(gArrows, 0, 0, 'pull', 'sv-pull-t', {'text-anchor': 'middle'}), pushT = txt(gArrows, 0, 0, 'push', 'sv-push-t', {'text-anchor': 'middle'});
-    var pullP = el('path', {'class': 'sv-pull'}, gArrows), pushP = el('path', {'class': 'sv-push'}, gArrows);
+    var forceEls = N.map(function (p, i) { return FORCE[i] ? el('path', {'class': FORCE[i][0] > 0 ? 'sv-pull' : 'sv-push'}, gArrows) : null; });
+    // the labels stay where the arrows start
+    var mA = [(P0[0] + N[A][0]) / 2, (P0[1] + N[A][1]) / 2];
+    txt(gArrows, mA[0] - 18, mA[1] - 20, 'pull', 'sv-pull-t', {'text-anchor': 'middle'});
+    txt(gArrows, N[C][0] + 6, N[C][1] + 44, 'push', 'sv-push-t', {'text-anchor': 'middle'});
     var st = {step: -1, u: 0, e: P0.slice()}, sig = function (s) { return 1 / (1 + Math.exp(-s)); }, TOP = sig(1.5);
     function ramp(u, a, b) { return clamp((u - a) / (b - a), 0, 1); }
     function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
     function lerp(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
     function line(l, a, b) { l.setAttribute('x1', a[0]); l.setAttribute('y1', a[1]); l.setAttribute('x2', b[0]); l.setAttribute('y2', b[1]); }
-    function chevrons(c, u, size) {
+    function chevrons(c, u, size, two) {
       var n = [-u[1], u[0]], d = '';
-      [0, 11].forEach(function (off) {
+      (two ? [-5.5, 5.5] : [0]).forEach(function (off) {
         var t = [c[0] + u[0] * off, c[1] + u[1] * off];
         d += 'M' + (t[0] - u[0] * size + n[0] * size) + ' ' + (t[1] - u[1] * size + n[1] * size) + 'L' + t[0] + ' ' + t[1] +
              'L' + (t[0] - u[0] * size - n[0] * size) + ' ' + (t[1] - u[1] * size - n[1] * size);
@@ -606,7 +664,7 @@
     }
     // Each step is a function of its share u (0 to 1) of the scroll, so every scroll changes the picture and the steps
     // join without jumps: (1) the layers turn into points, (2) the radius appears and the links to the neurons inside it
-    // grow, nearest first, (3) the pull and the push run along their lines, (4) the neuron moves and its links follow.
+    // grow, nearest first, (3) every link pulls or pushes and e_i starts to move, (4) e_i moves on and its links change.
     function draw() {
       var s = st.step, u = st.u, m = s === 0 ? ease(ramp(u, 0.03, 0.9)) : 1;
       var nP = N.map(function (p, i) { return lerp(colN[i], p, m); }), oP = O.map(function (p, j) { return lerp(colO[j], p, m); });
@@ -643,15 +701,13 @@
       gone.style.display = s === 3 && Math.hypot(N[C][0] - e[0], N[C][1] - e[1]) >= RAD ? '' : 'none';
       line(gone, e, N[C]);
       gArrows.style.opacity = s === 2 ? ramp(u, 0, 0.2) : s === 3 ? 1 - ramp(u, 0, 0.2) : 0;
-      var f = s === 2 ? u : 1;
-      var a = N[A], ua = [a[0] - e[0], a[1] - e[1]], la = Math.hypot(ua[0], ua[1]); ua = [ua[0] / la, ua[1] / la];
-      var ca = lerp(e, a, 0.25 + 0.45 * f);
-      pullP.setAttribute('d', chevrons(ca, ua, 7));
-      pullT.setAttribute('x', ca[0] - 18); pullT.setAttribute('y', ca[1] - 20);
-      var c = N[C], uc = [e[0] - c[0], e[1] - c[1]], lc = Math.hypot(uc[0], uc[1]); uc = [uc[0] / lc, uc[1] / lc];
-      var cc = lerp(e, c, 0.6 - 0.28 * f);
-      pushP.setAttribute('d', chevrons(cc, uc, 7));
-      pushT.setAttribute('x', c[0] + 6); pushT.setAttribute('y', c[1] + 44);
+      forceEls.forEach(function (p, i) {
+        if (!p) return;
+        var q = N[i], d = Math.hypot(q[0] - e[0], q[1] - e[1]), f = FORCE[i];
+        if (d >= RAD) { p.style.display = 'none'; return; }
+        p.style.display = '';
+        p.setAttribute('d', chevrons(lerp(e, q, 0.5), [(q[0] - e[0]) / d * f[0], (q[1] - e[1]) / d * f[0]], f[1] > 0.5 ? 7 : 5.5, f[1] > 0.5));
+      });
     }
     // The figure is pinned while the reader scrolls through a track below it: each step owns an equal stretch of the
     // track (SPAN of a viewport height), so scrolling down plays the steps and scrolling up plays them back.
@@ -683,7 +739,7 @@
       var p = progress() * STEPS, i = Math.min(STEPS - 1, Math.floor(p));
       setStep(i);
       st.u = clamp(p - i, 0, 1);
-      if (!dragged) st.e = i === 3 ? lerp(P0, P1, ease(st.u)) : P0.slice();
+      if (!dragged) st.e = i === 2 ? lerp(P0, P1, MID * st.u) : i === 3 ? lerp(P0, P1, MID + (1 - MID) * st.u) : P0.slice();
       draw();
     }
     function later() { dragged = false; if (!ticking) { ticking = true; requestAnimationFrame(update); } }
@@ -799,7 +855,7 @@
     var D = window.LEWI_WM, host = $('wm');
     if (!D || !host) return;
     while (host.firstChild) host.removeChild(host.firstChild);
-    var CLIP = 0.75, cw = 40, ch = 30, ggap = 12, L = 70, top = 30, Rr = 92, bottom = 104;
+    var CLIP = 0.75, cw = 40, ch = 30, ggap = 12, L = 70, top = 30, Rr = 104, bottom = 104;
     var cols = [], x = L;
     D.groups.forEach(function (g, gi) {
       g.tasks.forEach(function () { cols.push({x: x, g: gi}); x += cw; });
@@ -829,10 +885,7 @@
         });
         rect.addEventListener('pointerleave', hideTip);
       });
-      var cnt = D.counts[i];
-      txt(svg, gridW + 16, top + i * ch + ch / 2 + 4.5, cnt.win + ' – ' + cnt.tie + ' – ' + cnt.loss, 'wm-tally');
     });
-    txt(svg, gridW + 16, top - 11, 'W – T – L', 'wm-tally-h');
     D.tasks.forEach(function (task, j) {
       var c = cols[j], tx = c.x + cw / 2 + 4, ty = top + D.baselines.length * ch + 10;
       var lab = txt(svg, tx, ty, task, 'wm-task', {'text-anchor': 'end', transform: 'rotate(-42 ' + tx + ' ' + ty + ')'});
@@ -863,7 +916,7 @@
     if (!runs || !cv) return;
     var nets = {}, cur = 0, net = null;
     var view = new Viewer(cv, {yaw: runs[0].view.yaw, pitch: runs[0].view.pitch, sway: REDUCE ? null : {amp: 0.7, rate: 0.22}, fill: 0.37});
-    var style = {edgeWidth: 0.7, edgeAlpha: 0.34, edgeAlphaDim: 0.08, radius: 3.0, dimAlpha: 0.55, only: null, otherAlpha: 0.1};
+    var style = {edgeWidth: 0.7, edgeAlpha: 0.34, edgeAlphaDim: 0.08, radius: 3.0, dimAlpha: 0.55, only: null, otherAlpha: 0.1, fit: true, pad: 14, dy: -0.03};
     var layersBar = $('gallery-layers'), baseAlpha = 0.34;
     function layerButtons(r) {
       while (layersBar.firstChild) layersBar.removeChild(layersBar.firstChild);
@@ -929,6 +982,65 @@
     requestAnimationFrame(loop);
   }
 
+  // ------------------------------------------------------------------ alignment results under the gallery: grouped bars
+  function alignFig() {
+    var A = window.LEWI_ALIGN;
+    if (!A) return;
+    var VW = 400, x0 = 122, x1 = 386, bh = 8, gapB = 3, padG = 14;
+    function X(v) { return x0 + clamp(v, 0, 1) * (x1 - x0); }
+    function fmt(v) { return v.toFixed(2); }
+    function panel(id, rows, series, tip) {
+      var svg = $(id);
+      if (!svg) return;
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      var gh = series.length * bh + (series.length - 1) * gapB, top = 40, H = top + rows.length * (gh + padG) + 26;
+      svg.setAttribute('viewBox', '0 0 ' + VW + ' ' + H);
+      var lx = x0;
+      series.forEach(function (sr) {
+        el('rect', {x: lx, y: 9, width: 14, height: 8, rx: 2, fill: sr.color}, svg);
+        txt(svg, lx + 20, 17, sr.name, 'al-leg');
+        lx += 20 + sr.w;
+      });
+      var bottom = top + rows.length * (gh + padG) - padG + 6;
+      [0, 0.5, 1].forEach(function (v) {
+        el('line', {x1: X(v), x2: X(v), y1: top - 6, y2: bottom, 'class': 'pt-g'}, svg);
+        txt(svg, X(v), bottom + 16, v ? String(v) : '0', 'pt-t', {'text-anchor': 'middle'});
+      });
+      rows.forEach(function (r, i) {
+        var y = top + i * (gh + padG);
+        txt(svg, 0, y + gh / 2 + 5, r.label, 'al-row');
+        series.forEach(function (sr, j) {
+          var d = sr.get(r), yy = y + j * (bh + gapB);
+          var bar = el('rect', {x: x0, y: yy, width: Math.max(1, X(d.value) - x0), height: bh, rx: bh / 2, fill: sr.color}, svg);
+          bar.addEventListener('pointermove', function (ev) { showTip(tip(r, sr, d), ev.clientX, ev.clientY); });
+          bar.addEventListener('pointerleave', hideTip);
+        });
+      });
+    }
+    var LEVEL = [{name: 'Dense', color: 'var(--dense)', w: 50, get: function (r) { return r.Dense; }},
+                 {name: 'LeWi', color: 'var(--lewi)', w: 48, get: function (r) { return r.LeWi; }},
+                 {name: 'GraphOracle', color: 'var(--oracle)', w: 80, get: function (r) { return r.GraphOracle; }}];
+    function levelTip(r, sr, d) {
+      return '<div class="tt-h">' + r.label + ' pieces</div><div>' + sr.name + ': <b>' + fmt(d.value) + '</b> (hidden layer ' + d.layer + ')</div>' +
+        '<div class="tt-dim">95% interval ' + fmt(d.lo) + ' to ' + fmt(d.hi) + '</div>';
+    }
+    panel('al-probe', A.probe, LEVEL, levelTip);
+    panel('al-das', A.das, LEVEL, levelTip);
+    var CONTROLS = [['init', 'initialization'], ['rewired', 'degree-preserving rewiring'], ['shuffled', 'modules shuffled']];
+    function bestControl(r) {
+      var b = null;
+      CONTROLS.forEach(function (c) { if (r[c[0]] && (!b || r[c[0]].value > b.value)) b = r[c[0]]; });
+      return b;
+    }
+    panel('al-f1', A.f1, [{name: 'Best control', color: 'var(--base)', w: 92, get: bestControl},
+                          {name: 'LeWi', color: 'var(--lewi)', w: 48, get: function (r) { return r.trained; }}],
+      function (r, sr, d) {
+        var rows = CONTROLS.map(function (c) {
+          return '<div class="tt-r tt-dim"><span>' + c[1] + '</span><span>' + fmt(r[c[0]].value) + '</span></div>';
+        }).join('');
+        return '<div class="tt-h">' + r.label + '</div><div class="tt-r"><span>LeWi, trained</span><span>' + fmt(r.trained.value) + '</span></div>' + rows;
+      });
+  }
   // ------------------------------------------------------------------ the BibTeX dialog behind the hero button
   function bibDialog() {
     var dlg = $('bib-dlg'), open = $('bib-open'), close = $('bib-close');
@@ -967,6 +1079,7 @@
   safe(stepperFig);
   safe(patternFig);
   safe(gallery);
+  safe(alignFig);
   safe(worldModel);
   safe(bibDialog);
   safe(copyBib);

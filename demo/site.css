@@ -1,13 +1,13 @@
 /* The site's copy of the demo: the project page's type and ground over the demo's own style.css. */
 :root {
   --paper: #f7f8fa;
-  --body: "IBM Plex Sans", "Helvetica Neue", Helvetica, sans-serif;
-  --ui: "IBM Plex Sans", "Helvetica Neue", Helvetica, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --body: var(--serif);
+  --ui: var(--serif);
+  --mono: var(--serif);
   --prose: #474f5e;
 }
-body { background: transparent; }
+body { background: transparent; font-variant-numeric: lining-nums; }
 body::before {
   content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background: linear-gradient(to bottom left, rgba(242, 107, 29, 0.1) 0%, transparent 48%, transparent 52%, rgba(0, 114, 178, 0.085) 100%);

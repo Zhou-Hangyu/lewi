@@ -46,8 +46,8 @@
   --v3-track: rgba(29, 34, 43, 0.2);
   --tg-edge: rgba(29, 34, 43, 0.32);
   --serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --sans: "IBM Plex Sans", "Helvetica Neue", Helvetica, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: var(--serif);
+  --mono: var(--serif);
   --wrap: 1180px;
   --pad: clamp(1rem, 4vw, 2.5rem);
   color-scheme: light;
@@ -80,6 +80,7 @@ body {
   background-color: var(--paper);
   font: 400 1.1875rem/1.62 var(--serif); font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;
+  font-variant-numeric: lining-nums;
   transition: background-color 0.25s, color 0.25s;
 }
 body::before {
@@ -102,8 +103,8 @@ sub, sup { line-height: 0; font-size: 0.72em; }
 
 h2 { font: 400 clamp(2rem, 1.35rem + 2.1vw, 2.85rem)/1.1 var(--serif); font-variation-settings: "opsz" 72; letter-spacing: -0.02em; margin: 0 0 1.1rem; text-wrap: balance; color: var(--ink); }
 h3 { text-wrap: balance; }
-.sec-head { max-width: 47rem; margin: 0 0 3.2rem; }
-.sec-lede { font-size: 1.22rem; line-height: 1.6; color: var(--ink-2); margin: 0; }
+.sec-head { margin: 0 0 3.2rem; }
+.sec-lede { max-width: 47rem; font-size: 1.22rem; line-height: 1.6; color: var(--ink-2); margin: 0; }
 .sec-lede b { color: var(--ink); font-weight: 600; }
 
 .katex { font-size: 1.06em; }
@@ -267,7 +268,7 @@ button.btn { cursor: pointer; }
 .pattern-fig { margin: 0; max-width: 1000px; }
 #pattern-svg { width: 100%; height: auto; overflow: visible; }
 .pt-row { font: 400 17px var(--serif); fill: var(--ink); }
-.pt-t { font: 400 12px var(--mono); fill: var(--muted); }
+.pt-t { font: 400 13px var(--mono); fill: var(--muted); font-variant-numeric: tabular-nums; }
 .pt-ax { font: 400 13px var(--sans); fill: var(--muted); }
 .pt-g { stroke: var(--hair-2); stroke-width: 1; }
 .pt-band { fill: var(--oracle); opacity: 0.12; }
@@ -283,6 +284,18 @@ button.btn { cursor: pointer; }
 /* ------------------------------------------------------------------ world-model tasks */
 
 .tip-clip { display: block; width: 168px; height: 168px; border-radius: 6px; margin: 0.4rem 0 0.2rem; }
+
+/* ------------------------------------------------------------------ alignment results */
+
+.align-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.25rem; }
+.align-card { margin: 0; background: var(--panel); border: 1px solid var(--hair); border-radius: 14px; padding: 1rem 1.15rem 0.7rem; box-shadow: var(--shadow); }
+.align-card figcaption { margin: 0 0 0.75rem; }
+.align-card figcaption b { display: block; font: 500 1.12rem/1.3 var(--serif); color: var(--ink); }
+.align-card figcaption span { display: block; font: 400 0.9rem/1.4 var(--serif); color: var(--muted); }
+.align-card svg { width: 100%; height: auto; }
+.al-row { font: 400 15px var(--serif); fill: var(--ink); }
+.al-leg { font: 400 13.5px var(--serif); fill: var(--ink-2); }
+@media (max-width: 980px) { .align-row { grid-template-columns: minmax(0, 1fr); } }
 
 /* ------------------------------------------------------------------ gallery */
 
@@ -320,8 +333,6 @@ button.btn { cursor: pointer; }
 .wm-cell { stroke: var(--paper-2); stroke-width: 1.5; cursor: default; }
 .wm-cell:hover { stroke: var(--ink); stroke-width: 1.5; }
 .wm-tie { fill: none; stroke: var(--ink); stroke-width: 1.1; pointer-events: none; }
-.wm-tally { font: 400 11.5px var(--mono); fill: var(--ink-2); }
-.wm-tally-h { font: 500 10px var(--mono); letter-spacing: 0.08em; fill: var(--muted); }
 .wm-scale-t { font: 400 10.5px var(--mono); fill: var(--muted); }
 .wm-scale-k { font: 400 10.5px var(--sans); fill: var(--muted); }
 
