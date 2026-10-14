@@ -1,0 +1,496 @@
+/* LeWi training dynamics — a static page, no external assets. */
+
+:root {
+  --paper: #ffffff;
+  --panel: #ffffff;
+  --bench: #fafafa;
+  --ink: #111111;
+  --ink-soft: #3d3d3d;
+  --muted: #6b6b6b;
+  --faint: #9a9a9a;
+  --hair: #e2e2e2;
+  --hair-soft: #eeeeee;
+  --accent: #0f62fe;
+  --accent-deep: #0043ce;
+  --accent-wash: #eef4ff;
+  --curve: #111111;
+  --curve-future: #dcdcdc;
+  --body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+  --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--paper); color-scheme: light; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font: 15px/1.6 var(--body);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent-deep); }
+b, strong { font-weight: 650; }
+var { font-style: italic; font-family: Georgia, serif; }
+sup, sub { line-height: 0; }
+
+.wrap { max-width: 86rem; margin: 0 auto; padding: 2.2rem 1.4rem 3rem; }
+
+/* ---------------------------------------------------------------- masthead */
+
+/* the text keeps a reading width; the run tabs may use the page's */
+.masthead { margin: 0 0 2.6rem; }
+.masthead h1, .masthead > p { max-width: 54rem; }
+.masthead h1 {
+  font-size: 2.05rem;
+  font-weight: 680;
+  letter-spacing: -0.024em;
+  line-height: 1.15;
+  margin: 0 0 0.35rem;
+  text-wrap: balance;
+}
+.masthead > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+/* the subtitle: what the page is, in one line under the name */
+.masthead > .subtitle {
+  font-size: 1.12rem;
+  line-height: 1.45;
+  color: var(--muted);
+  margin: 0 0 1.15rem;
+  text-wrap: balance;
+}
+/* the opening: what LeWi is, then what the page lets you explore */
+.masthead > .lede {
+  max-width: 54rem;
+  margin: 0 0 0.6rem;
+  font-size: 1.02rem;
+  line-height: 1.62;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+.masthead > .lede b { font-weight: 650; color: var(--ink); }
+
+/* ---------------------------------------------------------------- sections */
+
+section { margin: 0 0 3.2rem; }
+h2 {
+  font-weight: 650;
+  font-size: 1.22rem;
+  margin: 0 0 0.4rem;
+  letter-spacing: -0.014em;
+}
+.cap {
+  max-width: 54rem;
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* -------------------------------------------------------------- instrument */
+
+.instrument {
+  background: var(--bench);
+  border: 1px solid var(--hair-soft);
+  border-radius: 10px;
+  padding: 1rem 1rem 0.85rem;
+  position: relative;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) minmax(360px, 2.1fr) minmax(230px, 1fr);
+  gap: 0.9rem;
+  align-items: stretch;
+}
+/* the 3-D view sits first in the DOM so narrow screens lead with it; explicit
+   placement keeps the desktop arrangement: the target graph over the loss
+   curve | the embeddings | the connection matrices, stacked */
+.stage .leftcol { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 0.9rem; }
+.stage .leftcol #curve3-panel { flex: 1 1 auto; }
+.stage #geo3-panel { grid-column: 2; grid-row: 1; }
+.stage .matpanel { grid-column: 3; grid-row: 1; margin: 0; }
+/* a canvas may never prop its own column open: without these, a stale inline
+   canvas width blocks the grid from shrinking and the panels overlap */
+.stage > *, .leftcol > *, .mattrio > *, .s3-grid > * { min-width: 0; }
+canvas { max-width: 100%; }
+@media (max-width: 1120px) {
+  /* narrow: the 3-D view leads at full width, the target graph and the loss
+     curve share the row beneath it, the matrices in a row below */
+  .stage { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stage #geo3-panel { grid-column: 1 / -1; grid-row: 1; }
+  .stage .leftcol { grid-column: 1 / -1; grid-row: 2; display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stage .matpanel { grid-column: 1 / -1; grid-row: 3; }
+}
+@media (max-width: 640px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  .stage .leftcol, .stage #geo3-panel, .stage .matpanel { grid-column: 1; grid-row: auto; }
+  .stage .leftcol { grid-template-columns: minmax(0, 1fr); }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--hair-soft);
+  border-radius: 8px;
+  padding: 0.55rem 0.6rem 0.6rem;
+}
+.panel .ptitle {
+  font-family: var(--ui);
+  font-size: 0.78rem;
+  font-weight: 620;
+  color: var(--ink-soft);
+  margin: 0 0 0.15rem;
+  letter-spacing: 0.005em;
+}
+.panel .psub {
+  font-family: var(--ui);
+  font-size: 0.68rem;
+  color: var(--faint);
+  margin: 0 0 0.35rem;
+}
+.panel .psub.hint { margin: 0.4rem 0 0; }
+
+#teacher3-svg svg { display: block; width: 100%; height: auto; }
+#teacher3-svg .tnode { cursor: pointer; }
+#teacher3-svg .tnode:hover circle,
+#teacher3-svg .tnode:hover rect {
+  stroke: var(--ink); stroke-width: 1.6;
+}
+.focus-chip {
+  display: none;
+  margin-top: 0.4rem;
+  font: 0.72rem var(--ui);
+  color: var(--accent-deep);
+  background: var(--accent-wash);
+  border: 1px solid #cddcff;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  width: fit-content;
+  cursor: pointer;
+}
+.focus-chip.on { display: inline-block; }
+
+#geo3-panel { position: relative; display: flex; flex-direction: column; }
+/* the embeddings fill what the dashboard row gives them: a square at least,
+   taller when the side columns are taller (the canvas is sized from the box) */
+.geo-box { position: relative; flex: 1 1 auto; min-height: 0; }
+.geo-box canvas { position: absolute; left: 0; top: 0; display: block; }
+canvas.block { display: block; width: 100%; height: auto; }
+/* gestures live on the cube-tracking zone, not the canvas, so the panel
+   area outside the cube scrolls the page normally */
+.c3d-zone { position: absolute; z-index: 3; touch-action: none;
+            cursor: grab; }
+.c3d-zone:active { cursor: grabbing; }
+
+.shape-key {
+  display: flex; flex-wrap: wrap; gap: 0.15rem 0.85rem;
+  font: 0.7rem var(--ui); color: var(--muted);
+  margin-top: 0.4rem;
+}
+.shape-key .g { color: var(--ink-soft); margin-right: 0.28rem; }
+
+.viewrow {
+  display: flex; flex-wrap: wrap; gap: 0.45rem 0.65rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-family: var(--ui);
+}
+.viewrow.quiet { margin-top: 0.3rem; min-height: 1.15rem; }   /* the same height empty or filled */
+/* a labelled control: the label, then a segmented choice or a slider */
+.ctl { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+.ctl[hidden] { display: none; }
+.ctl .c3d-slider { width: 110px; }
+.seg { display: inline-flex; border: 1px solid var(--hair); border-radius: 999px;
+       overflow: hidden; background: var(--panel); }
+.seg button { font: 11.5px var(--ui); padding: 4px 10px; border: 0; margin: 0;
+              background: transparent; color: var(--muted); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--hair); }
+.seg button:hover { color: var(--ink); }
+.seg button.on { background: var(--ink); color: #fff; }
+.seg button:focus-visible, .c3d-btn:focus-visible, .mtab:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* the connection matrices: one transition at a time, picked by a tab, its
+   soft gate, binary mask and forward-pass weight; in the dashboard the three
+   are scaled to the height the row leaves them (the script measures the trio) */
+.matpanel { margin-top: 0.9rem; display: flex; flex-direction: column; }
+.matpanel .mattrio { flex: 1 1 auto; min-height: 0; align-content: start; }
+.mathead { display: flex; flex-wrap: wrap; align-items: baseline;
+           gap: 0.3rem 1rem; margin: 0 0 0.6rem; }
+.mathead .ptitle { margin: 0; }
+.mtabs { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.mtab { font: 0.7rem var(--ui); color: var(--muted); background: var(--panel);
+        border: 1px solid var(--hair); border-radius: 999px;
+        padding: 0.2rem 0.65rem; cursor: pointer; }
+.mtab:hover { border-color: var(--ink); color: var(--ink); }
+.mtab.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.mat p { font: 0.72rem var(--ui); color: var(--ink-soft); margin: 0 0 0.25rem; }
+.mat p math { font-size: 0.82rem; }
+.mat canvas { display: block; cursor: crosshair; max-width: 100%; }
+/* the panels of one transition: stacked in the dashboard's right column (each
+   at most 250 px wide, so the three keep to the height of the embeddings), in
+   a row on a narrow screen, where every VISIBLE child gets an implicit column */
+.mattrio { display: grid; gap: 0.7rem; grid-auto-flow: row; }
+.mattrio .mat { max-width: 250px; }
+.matpanel > .psub { margin: 0.55rem 0 0; }
+@media (max-width: 1120px) {
+  .mattrio { grid-auto-flow: column; grid-auto-columns: minmax(0, 300px); gap: 0.9rem; }
+  .mattrio .mat { max-width: none; }
+}
+@media (max-width: 640px) {
+  .mattrio { grid-auto-flow: row; grid-auto-columns: auto;
+             grid-template-columns: minmax(0, 1fr); }
+}
+
+#curve3-panel canvas { cursor: ew-resize; }
+
+/* ------------------------------------------------------------ run switcher */
+
+/* the tabs come in groups, each under a quiet caption and in one or more rows;
+   a tab shows its target graph */
+.runbar {
+  display: flex; flex-direction: column; gap: 0.75rem;
+  margin: 1.1rem 0 0;
+  font-family: var(--ui);
+}
+.rungroup { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.rgcap {
+  margin: 0;
+  font: 600 0.64rem/1.3 var(--ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.rgrows { display: flex; flex-direction: column; gap: 0.5rem; }
+.rglist { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.runbtn {
+  display: flex; flex-direction: row; align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--hair);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 0.36rem 0.8rem 0.36rem 0.5rem;
+  cursor: pointer;
+  font-family: var(--ui);
+  color: var(--muted);
+  text-align: left;
+}
+.runbtn .rtext { display: flex; flex-direction: column; gap: 0.05rem; }
+.runbtn b { font-size: 0.8rem; font-weight: 650; color: var(--ink-soft); }
+.runbtn .rtext span { font-size: 0.68rem; }
+.runbtn:hover { border-color: var(--ink-soft); }
+.runbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.runbtn.on {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+.runbtn.on b { color: var(--ink); }
+.rthumb { display: block; flex: none; width: 46px; height: 30px; }
+.rthumb line { stroke: #cfcfcf; stroke-width: 0.13; }
+.runbtn.on .rthumb line { stroke: #9d9d9d; }
+
+/* tooltip shared by every instrument canvas */
+.tip {
+  position: absolute; z-index: 30; pointer-events: none; display: none;
+  background: rgba(17, 17, 17, 0.95); color: #f5f5f5;
+  font: 0.72rem/1.45 var(--ui);
+  padding: 0.42rem 0.55rem; border-radius: 6px;
+  max-width: 280px;
+  box-shadow: 0 6px 18px -6px rgba(0,0,0,0.4);
+}
+.tip .tt-head, .c3d-tip .tt-head { font-weight: 650; }
+.tip .tt-dim, .c3d-tip .tt-dim { color: #b0b0b0; }
+.tip .bars, .c3d-tip .bars { display: grid;
+             grid-template-columns: auto 1fr auto; gap: 0.1rem 0.4rem;
+             margin-top: 0.25rem; align-items: center; }
+.tip .bars .lab, .c3d-tip .bars .lab { font-family: var(--mono); font-size: 0.66rem; }
+.tip .bars .bar, .c3d-tip .bars .bar { height: 5px; width: 86px;
+                  background: #3f3f3f; border-radius: 2px;
+                  overflow: hidden; }
+.tip .bars .bar i, .c3d-tip .bars .bar i { display: block; height: 100%; }
+.tip .bars .val, .c3d-tip .bars .val { font-family: var(--mono); font-size: 0.66rem; color: #cfcfcf; }
+
+/* ---------------------------------------------------------------- transport */
+
+.transport {
+  margin-top: 0.9rem;
+  border-top: 1px solid var(--hair-soft);
+  padding: 0.75rem 0.2rem 0.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  font-family: var(--ui);
+}
+.transport.subrow { border-top: 0; margin-top: 0; padding-top: 0.1rem; }
+.tbtn {
+  border: 1px solid var(--hair);
+  background: var(--panel);
+  color: var(--ink-soft);
+  font: 600 0.74rem var(--ui);
+  border-radius: 6px;
+  padding: 0.34rem 0.66rem;
+  cursor: pointer;
+}
+.tbtn:hover { border-color: var(--ink); color: var(--ink); }
+#play3 {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 0; background: var(--ink); color: #fff;
+  cursor: pointer; flex: none;
+  display: grid; place-items: center;
+}
+#play3:hover { background: #000; }
+#play3 svg { display: block; }
+
+.scrub { flex: 1 1 300px; position: relative; padding: 10px 0 14px; }
+.scrub input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 22px; margin: 0; background: transparent;
+  position: relative; z-index: 3; cursor: pointer;
+}
+.scrub input::-webkit-slider-runnable-track { height: 22px; background: transparent; }
+.scrub input::-moz-range-track { height: 22px; background: transparent; }
+.scrub input::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; margin-top: 3px; border-radius: 50%;
+  background: #fff; border: 2.5px solid var(--ink);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.scrub input::-moz-range-thumb {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: #fff; border: 2.5px solid var(--ink);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.scrub .track {
+  position: absolute; left: 0; right: 0; top: 19px; height: 3px;
+  border-radius: 2px; background: var(--hair); z-index: 1;
+}
+.scrub .fill {
+  position: absolute; left: 0; top: 19px; height: 3px;
+  border-radius: 2px; background: var(--ink); z-index: 2; width: 0;
+}
+.scrub .ticks { position: absolute; left: 0; right: 0; top: 14px; height: 14px;
+                z-index: 0; }
+.scrub .ticks i {
+  position: absolute; width: 1.5px; height: 14px; background: #c9c9c9;
+}
+.scrub .ticks i.fired { background: var(--accent); }
+
+.status {
+  font: 0.78rem var(--mono);
+  color: var(--muted);
+  margin: 0.4rem 0.2rem 0;
+  font-variant-numeric: tabular-nums;
+}
+.status b { color: var(--ink); font-weight: 650; }
+.evrow { display: flex; gap: 0.3rem; flex-wrap: wrap; align-items: center; }
+.evrow .lab { font: 0.68rem var(--ui); color: var(--faint); margin-right: 0.2rem; }
+.evbtn {
+  border: 1px solid var(--hair); background: var(--panel);
+  font: 0.68rem var(--mono); color: var(--muted);
+  border-radius: 5px; padding: 0.18rem 0.4rem; cursor: pointer;
+}
+.evbtn:hover { border-color: var(--ink); color: var(--ink); }
+.evbtn.fired { border-color: #b7ccf7; color: var(--accent-deep); background: var(--accent-wash); }
+
+.inst-hint {
+  font: 0.72rem var(--ui); color: var(--faint);
+  margin: 0.55rem 0.2rem 0.2rem;
+}
+
+/* loading / error veil over the instrument */
+.veil {
+  position: absolute; inset: 0; z-index: 40;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font: 0.85rem var(--ui); color: var(--muted);
+  text-align: center; padding: 1rem;
+}
+.pulse {
+  width: 32px; height: 32px; margin: 0 auto 0.7rem;
+  border-radius: 50%; border: 3px solid var(--hair-soft);
+  border-top-color: var(--ink);
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .pulse { animation: none; }
+}
+.veil code { font-family: var(--mono); background: var(--hair-soft);
+             padding: 0.05em 0.35em; border-radius: 4px; }
+
+/* ------------------------------------------------------------------- c3d */
+
+/* the finished-network section */
+.s3-grid { display: grid; gap: 12px; margin: 0 0 12px;
+           grid-template-columns: repeat(6, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .s3-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .s3-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* a run of the paper's figure: its five transition panels in one row */
+@media (min-width: 1101px) { .s3-grid.five { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.c3d-title .gl { color: var(--ink-soft); }
+.s3-wide { margin: 0 0 4px; }
+.s3-widebox { width: 100%; }
+.s3-widebox canvas { width: 100%; height: auto; }
+.c3d-panel { position: relative; border: 1px solid var(--hair-soft); border-radius: 8px;
+             background: var(--panel); padding: 4px 4px 8px; }
+.c3d-panel canvas { display: block; }
+.c3d-title { font-size: 12px; color: var(--ink-soft); text-align: center;
+             padding: 3px 0 4px; font-family: var(--ui); }
+.c3d-tip { position: absolute; pointer-events: none; display: none; z-index: 5;
+           background: rgba(17, 17, 17, 0.95); color: #f5f5f5; font-size: 11.5px;
+           padding: 5px 8px; border-radius: 4px; white-space: nowrap;
+           line-height: 1.35; font-family: var(--ui); }
+.c3d-legend { display: flex; flex-wrap: wrap; gap: 11px; font-size: 12px;
+              color: var(--muted); margin: 9px 2px 0; font-family: var(--ui); }
+.c3d-legend span.sw { display: inline-block; width: 11px; height: 11px;
+                      border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.c3d-hint { font-size: 12px; color: var(--faint); margin: 8px 2px 0;
+            font-family: var(--ui); }
+.c3d-tools { display: flex; flex-wrap: wrap; gap: 7px 10px; margin: 10px 0 0;
+             align-items: center; font-family: var(--ui); }
+.s3-tools { margin: 0 0 12px; }
+.c3d-btn { font-size: 11.5px; margin: 0; padding: 4px 11px;
+           border: 1px solid var(--hair); background: var(--panel);
+           color: var(--ink-soft); border-radius: 999px; cursor: pointer;
+           font-family: var(--ui); }
+.c3d-btn:hover { border-color: var(--ink); color: var(--ink); }
+.c3d-btn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.c3d-btn.on:hover { background: #000; color: #fff; }
+.c3d-btn.c3d-off { background: var(--bench); color: var(--faint);
+                   border-color: var(--hair-soft); text-decoration: line-through; }
+/* the rotation waits after the reader turns or zooms the view: the pause
+   button lights up and a bar under its label runs out as the wait does */
+.c3d-btn.resting {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+  background: linear-gradient(var(--accent), var(--accent)) left bottom /
+              calc(var(--rest, 0) * 100%) 2px no-repeat var(--accent-wash);
+}
+.c3d-slider { width: 150px; vertical-align: middle; accent-color: var(--ink); }
+.c3d-sval { font-size: 11.5px; color: var(--muted); font-family: var(--mono); }
+.c3d-legkey { color: var(--faint); font-weight: 600; font-size: 11.5px;
+              font-family: var(--ui); }
+.c3d-loading { font: 0.8rem var(--ui); color: var(--muted); padding: 1rem 0; }
+
+
+.technote {
+  margin: 2.6rem 0 0; padding-top: 0.8rem;
+  border-top: 1px solid var(--hair-soft);
+  font: 0.7rem var(--ui); color: var(--faint);
+  max-width: 54rem;
+}
+
+.noscript-note {
+  margin: 1rem 0; padding: 0.8rem 1rem;
+  border: 1px solid var(--hair); border-left: 4px solid var(--ink);
+  background: var(--panel); border-radius: 0 6px 6px 0;
+  font-family: var(--ui); font-size: 0.85rem;
+}

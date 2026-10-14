@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LeWi training dynamics</title>
+<meta name="description" content="Interactive visualization of learned neuron embeddings and connectivity during the training of a Learned Wiring (LeWi) network.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 12 8 4 12 12' stroke='%23999' fill='none'/%3E%3Ccircle cx='4' cy='12' r='2.6' fill='%23c44e52'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%234c72b0'/%3E%3Ccircle cx='8' cy='4' r='2.6' fill='%23555555'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css?v=20261003d">
+</head>
+<body>
+<nav class="site-back" style="font:500 13px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0e14;color:#eef2f7;padding:9px 1.4rem;display:flex;gap:1rem;align-items:center;justify-content:space-between"><a href="../index.html" style="color:#eef2f7;text-decoration:none">&larr; LeWi project page</a><a href="../paper/lewi.pdf" style="color:#f26b1d;text-decoration:none">Paper (PDF)</a></nav>
+
+<div class="wrap">
+
+<header class="masthead">
+  <h1>LeWi training dynamics</h1>
+  <p class="subtitle">Interactive visualization of learned neuron embeddings and connectivity</p>
+  <p class="lede">
+    Learned Wiring (LeWi) assigns each neuron a learned 3-D embedding. Neurons
+    in adjacent layers connect when their embedding distance is within a fixed
+    radius. The prediction loss jointly optimizes the embeddings and connection
+    weights. Gradients through active soft gates can move connected neurons
+    closer together or farther apart, changing connectivity during training.
+  </p>
+  <p class="lede">
+    This demo shows one LeWi model trained on <span id="intro-target">a depth-4
+    tree target</span>. Colors are assigned post hoc from held-out associations
+    with the target computation and are not used during training.
+  </p>
+  <div class="runbar" id="runbar-top"></div>
+</header>
+
+<section id="run3d">
+  <h2>Training dynamics</h2>
+  <p class="cap">
+    The learned embedding geometry over training for a network with <span
+    id="run3-arch">32 neurons per hidden layer and four hidden layers</span>,
+    trained on <span id="run3-target">a depth-4 tree over eight inputs</span>.
+    <span id="run3-rule">Hidden neurons are colored by the target intermediate with which their activation has the largest absolute correlation on diagnostic examples, provided the correlation exceeds a permutation-derived threshold. The threshold of this run is |<var>r</var>| = 0.033.</span>
+  </p>
+
+  <div class="instrument" id="instrument3">
+    <div class="stage">
+      <div class="panel" id="geo3-panel">
+        <p class="ptitle">Learned neuron embeddings</p>
+        <p class="psub">drag to rotate · scroll to zoom · hover for neuron details ·
+          click to highlight a path · shift-click or right-click to trace
+          connections</p>
+        <div class="geo-box"><canvas id="geo3"></canvas></div>
+        <div class="viewrow">
+          <span class="ctl"><span class="c3d-legkey">Edges</span>
+            <span class="seg" id="edges3-seg" role="group" aria-label="Edges">
+              <button type="button" data-v="input">Input</button>
+              <button type="button" data-v="hidden">Hidden</button>
+              <button type="button" data-v="all" class="on">All</button>
+            </span></span>
+          <span class="ctl"><span class="c3d-legkey">Edge opacity</span>
+            <span class="seg" id="opacity3-seg" role="group" aria-label="Edge opacity">
+              <button type="button" data-v="mask" class="on">Binary mask</button>
+              <button type="button" data-v="soft">Soft gate</button>
+            </span></span>
+          <span class="ctl" id="gate3-ctl" hidden><span class="c3d-legkey">Minimum gate</span>
+            <input type="range" id="gate3-min" class="c3d-slider" min="0" max="1"
+                   step="0.01" value="0.5" aria-label="minimum gate">
+            <span class="c3d-sval" id="gate3-minval">0.50</span></span>
+          <button class="c3d-btn tog" id="hide3-dim" type="button" aria-pressed="false">Hide unassigned neurons</button>
+          <button class="c3d-btn tog" id="spin3" type="button" aria-pressed="false">Auto-rotate</button>
+          <button class="c3d-btn" id="view3-reset" type="button">Reset view</button>
+        </div>
+        <div class="viewrow quiet"><span class="c3d-sval" id="edge-count"></span>
+          <span class="c3d-sval" id="conn3-note"></span></div>
+        <div class="shape-key" id="shape3-key"></div>
+      </div>
+
+      <div class="leftcol" id="left3">
+        <div class="panel" id="target3-panel">
+          <p class="ptitle">Target computation graph</p>
+          <p class="psub">Colors match the post hoc assignments in the embedding view.</p>
+          <div id="teacher3-svg"></div>
+          <p class="psub hint">click a node to isolate its neurons · shift-click to add</p>
+          <button class="focus-chip" id="focus3-chip" type="button"></button>
+        </div>
+        <div class="panel" id="curve3-panel">
+          <p class="ptitle">Validation NMSE</p>
+          <p class="psub">drag to scrub</p>
+          <canvas id="curve3" class="block"></canvas>
+        </div>
+      </div>
+
+      <div class="panel matpanel" id="mats3">
+        <div class="mathead">
+          <p class="ptitle">Connection matrices</p>
+          <div class="mtabs" id="mtabs3" role="tablist" aria-label="layer transition"></div>
+        </div>
+        <div class="mattrio" id="trio3">
+          <div class="mat"><p>Soft gate <var>g</var></p>
+            <canvas id="b3-g"></canvas></div>
+          <div class="mat" id="mwrap"><p>Binary mask <var>m</var></p>
+            <canvas id="b3-m"></canvas></div>
+          <div class="mat" id="wwrap"><p>Effective weight
+            <math><mover accent="true"><mi>W</mi><mo>&#x02DC;</mo></mover></math>
+            = <var>W</var> <var>g</var> <var>m</var></p>
+            <canvas id="b3-w"></canvas></div>
+        </div>
+        <p class="psub">rows: receiving neurons · columns: sending neurons · side strips: the
+          assigned target node · hover a cell for the connection, click to pin it</p>
+      </div>
+    </div>
+
+    <div class="transport">
+      <button id="play3" aria-label="play"><svg width="15" height="16" viewBox="0 0 15 16"><path d="M2 1.5 L13.5 8 L2 14.5 Z" fill="currentColor"/></svg></button>
+      <button id="restart3" class="tbtn" title="back to step 0">⟲ restart</button>
+      <button id="speed3" class="tbtn" title="playback speed">1×</button>
+      <div class="scrub">
+        <div class="track"></div>
+        <div class="fill" id="scrub3-fill"></div>
+        <div class="ticks" id="scrub3-ticks"></div>
+        <input type="range" id="scrub3-range" min="0" max="288" step="1" value="0"
+               aria-label="training step">
+      </div>
+    </div>
+    <div class="status" id="readout3" aria-live="off">loading…</div>
+    <div class="transport subrow">
+      <div class="evrow" id="evrow3">
+        <span class="lab">Jump to a connectivity change:</span>
+      </div>
+    </div>
+
+    <p class="inst-hint">
+      Hover neurons or matrix cells for details. Space plays, ←/→ step
+      (shift: ×10).
+    </p>
+    <div class="tip" id="tip3"></div>
+    <div class="veil" id="veil3"><div><div class="pulse"></div>loading the
+      run record…</div></div>
+  </div>
+</section>
+
+<section id="static3d-section">
+  <h2>Final learned wiring</h2>
+  <p class="cap" id="s3-cap">
+    The final state of the selected run, shown for each layer transition and for
+    the full network. All panels share the same camera. Drag to rotate, scroll to
+    zoom, hover for neuron details, and click a neuron to trace its connections.
+  </p>
+  <div id="static3d">
+    <div class="c3d-tools s3-tools"></div>
+    <div class="s3-grid"></div>
+    <div class="s3-wide"></div>
+    <div class="c3d-tools s3-layers"></div>
+  </div>
+</section>
+
+<footer class="technote">
+  Technical notes: This is a static page. Every script is a local file in this
+  repository. Nothing is loaded from a third party, and no usage data is collected.
+</footer>
+
+<noscript>
+  <div class="noscript-note">
+    This demonstration is interactive and needs JavaScript.
+  </div>
+</noscript>
+
+</div>
+
+<script src="assets/graphs.js?v=20261003d"></script>
+<script src="player3d.js?v=20261003d"></script>
+<script src="static3d.js?v=20261003d"></script>
+</body>
+</html>
