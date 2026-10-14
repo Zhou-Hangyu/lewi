@@ -113,7 +113,9 @@ h3 { text-wrap: balance; }
 /* ------------------------------------------------------------------ mark and buttons */
 
 .mark { width: 1.3em; height: 1.3em; flex: none; overflow: visible; }
-.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.mark-bg { fill: var(--lewi); }
+.mark-l { fill: none; stroke: #fff; stroke-opacity: 0.8; stroke-width: 1.9; stroke-linecap: round; }
+.mark-n { fill: #fff; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .btn {
@@ -143,7 +145,7 @@ button.btn { cursor: pointer; }
   min-height: min(100svh, 920px);
 }
 .lockup { display: flex; align-items: center; gap: 0.55rem; margin: 0 0 1.6rem; font: 500 0.98rem var(--sans); color: var(--muted); }
-.lockup .mark { width: 1.6em; height: 1.6em; }
+.lockup .mark { width: 1.55em; height: 1.55em; color: var(--ink-2); }
 .lockup-name { color: var(--ink); font-weight: 600; letter-spacing: 0.01em; }
 .lockup-sub::before { content: "·"; margin: 0 0.5rem 0 0.1rem; color: var(--faint); }
 .title { font: 380 clamp(2.3rem, 1.25rem + 2.6vw, 3.6rem)/1.06 var(--serif); font-variation-settings: "opsz" 72; letter-spacing: -0.022em; margin: 0 0 1.4rem; text-wrap: balance; color: var(--ink); }
@@ -350,6 +352,7 @@ button.btn { cursor: pointer; }
 .foot-in { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
 .foot p { margin: 0; }
 .foot-brand { display: flex; align-items: center; gap: 0.55rem; color: var(--ink); font-weight: 500; }
+.foot-brand .mark { color: var(--ink-2); }
 
 /* ------------------------------------------------------------------ tooltip */
 
