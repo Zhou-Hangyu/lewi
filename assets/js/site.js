@@ -379,13 +379,6 @@
     window.addEventListener('resize', later);
     check();
   }
-  function onceVisible(node, ratio, cb) {
-    if (!('IntersectionObserver' in window)) { cb(); return; }
-    var io = new IntersectionObserver(function (es) {
-      es.forEach(function (e) { if (e.intersectionRatio >= ratio) { io.disconnect(); cb(); } });
-    }, {threshold: [ratio]});
-    io.observe(node);
-  }
   function aulc(points) {
     var s = 0;
     for (var i = 1; i < points.length; i++) {
@@ -582,57 +575,70 @@
       pushP.setAttribute('d', chevrons(cc, uc, 7));
       pushT.setAttribute('x', c[0] + 6); pushT.setAttribute('y', c[1] + 44);
     }
-    var tabs = box.querySelectorAll('.st-tab'), rows = box.querySelectorAll('.st-math li');
+    // The figure is pinned while the reader scrolls through a track below it: each step owns an equal stretch of the
+    // track (SPAN of a viewport height), so scrolling down plays the steps and scrolling up plays them back. In step 4
+    // the neuron's move follows the scroll over the first MOVE of its stretch.
+    var tabs = box.querySelectorAll('.st-tab'), rows = box.querySelectorAll('.st-math li'), track = $('st-track');
     tabs.forEach(function (t) { var p = document.createElement('i'); p.className = 'prog'; t.appendChild(p); });
-    var DWELL = [3200, 4200, 4200, 5200], auto = !REDUCE, timer = null, raf = null;
-    function setStep(i, animate) {
+    var STEPS = 4, SPAN = 0.6, MOVE = 0.65, pinTop = 64, dragged = false, ticking = false;
+    st.step = -1;
+    function setStep(i) {
+      if (st.step === i) return;
       st.step = i;
-      tabs.forEach(function (t, k) {
-        t.setAttribute('aria-selected', String(k === i));
-        var p = t.querySelector('.prog');
-        p.style.transition = 'none'; p.style.width = '0';
-        if (k === i && auto) { p.getBoundingClientRect(); p.style.transition = 'width ' + DWELL[i] + 'ms linear'; p.style.width = '100%'; }
-      });
+      tabs.forEach(function (t, k) { t.setAttribute('aria-selected', String(k === i)); });
       rows.forEach(function (r) {
         var from = +r.getAttribute('data-from');
         r.classList.toggle('later', from > i);
         r.classList.toggle('past', from < i);
       });
-      if (raf) cancelAnimationFrame(raf);
-      if (i < 3) st.e = P0.slice();
-      if (i === 3 && animate && !REDUCE) {
-        var t0 = null, from = P0.slice();
-        var go = function (now) {
-          if (t0 === null) t0 = now + 350;
-          var t = clamp((now - t0) / 1500, 0, 1), k = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-          st.e = [from[0] + (P1[0] - from[0]) * k, from[1] + (P1[1] - from[1]) * k];
-          draw();
-          if (t < 1) raf = requestAnimationFrame(go);
-        };
-        raf = requestAnimationFrame(go);
-      } else if (i === 3) st.e = P1.slice();
-      draw();
-      if (timer) clearTimeout(timer);
-      if (auto) timer = setTimeout(function () { setStep((i + 1) % 4, true); }, DWELL[i]);
     }
-    tabs.forEach(function (t, k) { t.addEventListener('click', function () { auto = false; setStep(k, true); }); });
-    // the reader can drag the neuron e_i: the connections follow
-    var drag = null;
+    function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+    function layout() {
+      var h = box.offsetHeight, vh = window.innerHeight || document.documentElement.clientHeight;
+      pinTop = Math.max(64, (vh - h) / 2);
+      box.style.top = pinTop + 'px';
+      track.style.height = Math.round(h + STEPS * SPAN * vh) + 'px';
+    }
+    function progress() {
+      var total = track.offsetHeight - box.offsetHeight;
+      return total > 0 ? clamp((pinTop - track.getBoundingClientRect().top) / total, 0, 1) : 0;
+    }
+    function update() {
+      ticking = false;
+      var p = progress() * STEPS, i = Math.min(STEPS - 1, Math.floor(p)), sub = clamp(p - i, 0, 1);
+      setStep(i);
+      tabs.forEach(function (t, k) { t.querySelector('.prog').style.width = (k === i ? sub * 100 : 0) + '%'; });
+      if (!dragged) {
+        var k = i === 3 ? ease(clamp(sub / MOVE, 0, 1)) : 0;
+        st.e = [P0[0] + (P1[0] - P0[0]) * k, P0[1] + (P1[1] - P0[1]) * k];
+      }
+      draw();
+    }
+    function later() { dragged = false; if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+    window.addEventListener('scroll', later, {passive: true});
+    window.addEventListener('resize', function () { layout(); later(); });
+    window.addEventListener('load', function () { layout(); later(); });
+    // a tab scrolls the page to its step
+    tabs.forEach(function (t, k) {
+      t.addEventListener('click', function () {
+        var total = track.offsetHeight - box.offsetHeight;
+        var y = window.scrollY + track.getBoundingClientRect().top - pinTop + (k + (k === 3 ? 0.8 : 0.4)) / STEPS * total;
+        window.scrollTo({top: Math.round(y), behavior: REDUCE ? 'auto' : 'smooth'});
+      });
+    });
+    // the reader can drag the neuron e_i: the connections follow until the next scroll
     function toSvg(ev) { var pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+    var drag = false;
     eNode.style.cursor = 'grab';
     eNode.addEventListener('pointerdown', function (ev) {
-      ev.preventDefault(); auto = false; if (timer) clearTimeout(timer);
-      tabs.forEach(function (t) { var p = t.querySelector('.prog'); p.style.transition = 'none'; p.style.width = '0'; });
-      if (st.step === 0) setStep(1, false);
-      drag = true;
+      ev.preventDefault();
+      drag = true; dragged = true;
       window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
     });
     function move(ev) { if (!drag) return; var q = toSvg(ev); st.e = [clamp(q.x, 14, W - 14), clamp(q.y, 14, H - 14)]; draw(); }
-    function up() { drag = null; window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); }
-    auto = false;
-    setStep(0, false);
-    // the steps start playing once most of the figure is on screen
-    onceVisible(svg, 0.6, function () { if (!REDUCE && !drag) { auto = true; setStep(st.step, false); } });
+    function up() { drag = false; window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); }
+    layout();
+    update();
   }
 
   // ------------------------------------------------------------------ results: the pattern across target structures

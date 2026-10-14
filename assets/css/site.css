@@ -15,6 +15,10 @@
   --lewi-wash: rgba(242, 107, 29, 0.15);
   --lewi-glow: rgba(242, 107, 29, 0.07);
   --blue-glow: rgba(0, 114, 178, 0.06);
+  --wash-o: rgba(242, 107, 29, 0.075);
+  --wash-b: rgba(0, 114, 178, 0.06);
+  --wash-p: rgba(204, 121, 167, 0.065);
+  --wash-g: rgba(0, 158, 115, 0.055);
   --on-lewi: #1f0d03;
   --dense: #23272f;
   --oracle: #1f7a45;
@@ -57,6 +61,7 @@
     --ink: #e2e6ec; --ink-2: #b2bac7; --muted: #8a93a2; --faint: #636c7b; --hair: #283040; --hair-2: #1e2430;
     --lewi: #ff7a2e; --lewi-text: #ff9a5c; --lewi-wash: rgba(255, 122, 46, 0.2); --lewi-glow: rgba(255, 122, 46, 0.07);
     --blue-glow: rgba(64, 150, 220, 0.06); --on-lewi: #1f0d03;
+    --wash-o: rgba(255, 122, 46, 0.075); --wash-b: rgba(64, 150, 220, 0.07); --wash-p: rgba(204, 121, 167, 0.06); --wash-g: rgba(40, 180, 130, 0.055);
     --dense: #e2e6ec; --oracle: #4cb57c; --oracle-2: #6cc292; --oracle-1: #8fd0aa; --base: #5f6878;
     --leaf: #3b4250; --leaf-edge: #181d26; --func: #4f82d0; --readout: #79a884; --gedge: #8b94a3;
     --wm-mid: #1c222c; --wm-neg: #3d8fd1; --wm-pos: #e0505e;
@@ -73,7 +78,19 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0; background: var(--paper); color: var(--ink);
+  margin: 0; color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(62rem 46rem at 80% 3%, var(--wash-o), transparent 70%),
+    radial-gradient(54rem 42rem at 2% 9%, var(--wash-b), transparent 70%),
+    radial-gradient(58rem 44rem at 96% 20%, var(--wash-p), transparent 70%),
+    radial-gradient(62rem 46rem at 4% 32%, var(--wash-g), transparent 70%),
+    radial-gradient(58rem 44rem at 94% 45%, var(--wash-b), transparent 70%),
+    radial-gradient(62rem 46rem at 6% 58%, var(--wash-o), transparent 70%),
+    radial-gradient(58rem 44rem at 92% 71%, var(--wash-g), transparent 70%),
+    radial-gradient(62rem 46rem at 8% 84%, var(--wash-p), transparent 70%),
+    radial-gradient(64rem 40rem at 70% 99%, var(--wash-b), transparent 70%);
+  background-repeat: no-repeat;
   font: 400 1.1875rem/1.62 var(--serif); font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;
   transition: background-color 0.25s, color 0.25s;
@@ -90,7 +107,7 @@ sub, sup { line-height: 0; font-size: 0.72em; }
 
 .wrap { max-width: calc(var(--wrap) + 2 * var(--pad)); margin: 0 auto; padding: 0 var(--pad); }
 .band { padding: clamp(4.5rem, 2.5rem + 6vw, 7.5rem) 0; position: relative; }
-.band-alt { background: var(--paper-2); }
+.band-alt { background: transparent; }
 
 .eyebrow { font: 500 0.74rem/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--lewi-text); margin: 0 0 1.1rem; }
 h2 { font: 400 clamp(2rem, 1.35rem + 2.1vw, 2.85rem)/1.1 var(--serif); font-variation-settings: "opsz" 72; letter-spacing: -0.02em; margin: 0 0 1.1rem; text-wrap: balance; color: var(--ink); }
@@ -146,9 +163,7 @@ h3 { text-wrap: balance; }
 
 /* ------------------------------------------------------------------ hero */
 
-.hero { position: relative; background: var(--paper); color: var(--ink); overflow: hidden; isolation: isolate; border-bottom: 1px solid var(--hair); }
-.hero::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: radial-gradient(circle at 74% 44%, var(--lewi-glow), transparent 48%), radial-gradient(circle at 8% 105%, var(--blue-glow), transparent 45%); }
+.hero { position: relative; background: transparent; color: var(--ink); overflow: hidden; isolation: isolate; }
 .hero-grid {
   max-width: 1340px; margin: 0 auto; padding: clamp(4rem, 2rem + 6vh, 6.5rem) var(--pad) clamp(3rem, 2rem + 4vh, 5rem);
   display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(2rem, 4.5vw, 5rem); align-items: center;
@@ -262,13 +277,16 @@ h3 { text-wrap: balance; }
 
 /* ------------------------------------------------------------------ how it works: four steps */
 
-.stepper { max-width: 1060px; }
+.st-track { position: relative; }
+.st-head { margin-bottom: 1.5rem; }
+.stepper { max-width: 1060px; position: sticky; top: 64px; }
 .st-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 1.2rem; }
 .st-tab { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 0.55rem; font: 500 0.9rem/1 var(--sans); color: var(--muted); background: var(--panel); border: 1px solid var(--hair); border-radius: 10px; padding: 0.6rem 0.9rem; cursor: pointer; }
-.st-tab span { display: grid; place-items: center; width: 1.45rem; height: 1.45rem; border-radius: 50%; font: 500 0.74rem/1 var(--mono); border: 1px solid var(--hair); color: var(--muted); }
+.st-tab span:first-child { display: grid; place-items: center; width: 1.45rem; height: 1.45rem; border-radius: 50%; font: 500 0.74rem/1 var(--mono); border: 1px solid var(--hair); color: var(--muted); }
 .st-tab[aria-selected="true"] { color: var(--ink); border-color: var(--faint); }
-.st-tab[aria-selected="true"] span { background: var(--lewi); border-color: var(--lewi); color: var(--on-lewi); }
+.st-tab[aria-selected="true"] span:first-child { background: var(--lewi); border-color: var(--lewi); color: var(--on-lewi); }
 .st-tab .prog { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--lewi); }
+.st-tab .st-tl { white-space: nowrap; }
 .st-body { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(1.5rem, 3vw, 3rem); align-items: start; }
 .st-stage { margin: 0; background: var(--panel); border: 1px solid var(--hair); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
 #stepper-svg { width: 100%; height: auto; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -340,7 +358,7 @@ h3 { text-wrap: balance; }
 .side-k { font: 500 0.66rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.7rem; }
 #gallery-target { width: 100%; height: auto; margin: 0 0 1.4rem; }
 .gallery-note { color: var(--ink-2); margin: 0 0 1rem; }
-.gallery-side .textlink { margin-top: auto; }
+.gallery-side .btn-demo { margin-top: auto; align-self: flex-start; }
 .tg-e { stroke: var(--tg-edge); }
 .tg-n { stroke: var(--panel); stroke-width: 1.2; }
 .tg-out { fill: var(--v3-out); stroke: var(--panel); stroke-width: 1.2; }
@@ -380,6 +398,7 @@ h3 { text-wrap: balance; }
 .paper-title { font-size: clamp(1.7rem, 1.25rem + 1.4vw, 2.3rem); margin: 0 0 1rem; }
 .paper-authors { font: 500 1rem/1.6 var(--sans); color: var(--ink); margin: 0 0 1.6rem; }
 .paper-venue { font: 400 0.92rem/1.5 var(--sans); color: var(--muted); margin: 0 0 1.6rem; }
+.bib { max-width: 860px; }
 .bib-box { position: relative; }
 .bib pre { font: 400 0.78rem/1.7 var(--mono); color: var(--ink-2); background: var(--panel); border: 1px solid var(--hair); border-radius: 12px; padding: 1.2rem 1.4rem; margin: 0; overflow-x: auto; white-space: pre; }
 .chip-copy { position: absolute; top: 0.75rem; right: 0.75rem; }
@@ -387,7 +406,7 @@ h3 { text-wrap: balance; }
 
 /* ------------------------------------------------------------------ footer */
 
-.foot { background: var(--paper); color: var(--muted); padding: 2.4rem 0 2.8rem; font: 400 0.88rem/1.6 var(--sans); border-top: 1px solid var(--hair); }
+.foot { background: transparent; color: var(--muted); padding: 2.4rem 0 2.8rem; font: 400 0.88rem/1.6 var(--sans); }
 .foot-in { display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
 .foot p { margin: 0; }
 .foot-brand { display: flex; align-items: center; gap: 0.55rem; color: var(--ink); font-weight: 500; }
@@ -420,6 +439,13 @@ h3 { text-wrap: balance; }
   .hv-target { width: 104px; }
   .hv-read { flex-direction: column; gap: 0.15rem; }
   .btn { padding: 0.6rem 0.85rem; font-size: 0.9rem; }
+}
+@media (max-width: 760px) {
+  .st-tabs { flex-wrap: nowrap; }
+  .st-tab { padding: 0.5rem 0.65rem; font-size: 0.84rem; }
+  .st-tab:not([aria-selected="true"]) .st-tl { display: none; }
+  .st-math li.past, .st-math li.later { display: none; }
+  .st-math { padding-top: 0; }
 }
 @media (max-width: 520px) {
   .hv-label { font-size: 0.6rem; }
