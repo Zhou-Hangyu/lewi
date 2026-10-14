@@ -319,13 +319,6 @@
       var fr = frameOf(st.step);
       view.draw(net, fr[0], fr[1], fr[2], Math.round(fr[0] + fr[2]), style);
     }
-    // a click that is not a drag pauses or resumes the replay
-    var down = null;
-    cv.addEventListener('pointerdown', function (e) { down = {x: e.clientX, y: e.clientY}; });
-    cv.addEventListener('pointerup', function (e) {
-      if (down && Math.abs(e.clientX - down.x) + Math.abs(e.clientY - down.y) < 5) st.playing = !st.playing;
-      down = null;
-    });
     var visible = true, last = performance.now();
     onVisible(cv, function (v) { visible = v; });
     onTheme(function () { view.dirty = true; render(); });
@@ -387,6 +380,30 @@
     return s / (Math.log2(points[points.length - 1].n) - Math.log2(points[0].n));
   }
   function armOf(panel, test) { return panel.arms.filter(test)[0]; }
+
+  // ------------------------------------------------------------------ the background sheet: its two tints drift with the scroll
+  function sheet() {
+    var WARM = [[242, 107, 29], [204, 121, 167], [230, 159, 0], [242, 107, 29]];
+    var COOL = [[0, 114, 178], [0, 158, 115], [0, 114, 178], [0, 140, 150]];
+    var ticking = false;
+    function mix(stops, p) {
+      var x = p * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(x)), t = x - i, a = stops[i], b = stops[i + 1];
+      return [0, 1, 2].map(function (k) { return Math.round(a[k] + (b[k] - a[k]) * t); });
+    }
+    function paint() {
+      ticking = false;
+      var d = document.documentElement, max = Math.max(1, d.scrollHeight - window.innerHeight);
+      var p = clamp(window.scrollY / max, 0, 1), aw = token('--sheet-alpha-w') || '0.1', ac = token('--sheet-alpha-c') || '0.085';
+      var w = mix(WARM, p), c = mix(COOL, p);
+      root.style.setProperty('--sheet-w', 'rgba(' + w.join(',') + ',' + aw + ')');
+      root.style.setProperty('--sheet-c', 'rgba(' + c.join(',') + ',' + ac + ')');
+    }
+    function later() { if (!ticking) { ticking = true; requestAnimationFrame(paint); } }
+    window.addEventListener('scroll', later, {passive: true});
+    window.addEventListener('resize', later);
+    onTheme(paint);
+    paint();
+  }
 
   // ------------------------------------------------------------------ motivation: one function of 8 inputs, or 7 pieces of 2
   function piecesFig() {
@@ -579,7 +596,6 @@
     // track (SPAN of a viewport height), so scrolling down plays the steps and scrolling up plays them back. In step 4
     // the neuron's move follows the scroll over the first MOVE of its stretch.
     var tabs = box.querySelectorAll('.st-tab'), rows = box.querySelectorAll('.st-math li'), track = $('st-track');
-    tabs.forEach(function (t) { var p = document.createElement('i'); p.className = 'prog'; t.appendChild(p); });
     var STEPS = 4, SPAN = 0.6, MOVE = 0.65, pinTop = 64, dragged = false, ticking = false;
     st.step = -1;
     function setStep(i) {
@@ -607,7 +623,6 @@
       ticking = false;
       var p = progress() * STEPS, i = Math.min(STEPS - 1, Math.floor(p)), sub = clamp(p - i, 0, 1);
       setStep(i);
-      tabs.forEach(function (t, k) { t.querySelector('.prog').style.width = (k === i ? sub * 100 : 0) + '%'; });
       if (!dragged) {
         var k = i === 3 ? ease(clamp(sub / MOVE, 0, 1)) : 0;
         st.e = [P0[0] + (P1[0] - P0[0]) * k, P0[1] + (P1[1] - P0[1]) * k];
@@ -716,6 +731,7 @@
     var x = (t + 1) / 2 * (RDBU.length - 1), i = Math.min(RDBU.length - 2, Math.floor(x));
     return lerpHex(RDBU[i], RDBU[i + 1], x - i);
   }
+  function signed(v) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(3); }
   function worldModel() {
     var D = window.LEWI_WM, host = $('wm');
     if (!D || !host) return;
@@ -744,7 +760,9 @@
         rect.addEventListener('pointermove', function (e) {
           var verdict = D.verdict[i][j] === 'win' ? 'LeWi better' : D.verdict[i][j] === 'loss' ? b + ' better' : 'no clear difference';
           showTip('<div class="tt-h">' + task + '</div><img class="tip-clip" src="assets/img/tasks/' + D.keys[j] + '.webp" alt="">' +
-            '<div>LeWi vs ' + b + ': <b>' + verdict + '</b></div>', e.clientX, e.clientY);
+            '<div>LeWi vs ' + b + ': <b>' + verdict + '</b></div>' +
+            '<div class="tt-r"><span>AULC difference</span><span>' + signed(v) + '</span></div>' +
+            '<div class="tt-dim">95% interval ' + signed(D.lo[i][j]) + ' to ' + signed(D.hi[i][j]) + '</div>', e.clientX, e.clientY);
         });
         rect.addEventListener('pointerleave', hideTip);
       });
@@ -756,7 +774,12 @@
       var c = cols[j], tx = c.x + cw / 2 + 4, ty = top + D.baselines.length * ch + 10;
       var lab = txt(svg, tx, ty, task, 'wm-task', {'text-anchor': 'end', transform: 'rotate(-42 ' + tx + ' ' + ty + ')'});
       lab.addEventListener('pointermove', function (e) {
-        showTip('<div class="tt-h">' + task + '</div><img class="tip-clip" src="assets/img/tasks/' + D.keys[j] + '.webp" alt="">', e.clientX, e.clientY);
+        var rows = D.baselines.map(function (b, i) {
+          var v = D.value[i][j], mark = D.verdict[i][j] === 'win' ? '' : D.verdict[i][j] === 'loss' ? ' tt-loss' : ' tt-dim';
+          return '<div class="tt-r' + mark + '"><span>vs ' + b + '</span><span>' + signed(v) + '</span></div>';
+        }).join('');
+        showTip('<div class="tt-h">' + task + '</div><img class="tip-clip" src="assets/img/tasks/' + D.keys[j] + '.webp" alt="">' +
+          '<div class="tt-dim">AULC difference, negative = LeWi better</div>' + rows, e.clientX, e.clientY);
       });
       lab.addEventListener('pointerleave', hideTip);
     });
@@ -882,6 +905,7 @@
   function safe(fn) { try { fn(); } catch (err) { if (window.console) console.error(err); } }
   window.__lewi = {Net: Net, Viewer: Viewer, targetGraph: targetGraph};
   safe(nav);
+  safe(sheet);
   safe(hero);
   safe(piecesFig);
   safe(gapFig);
