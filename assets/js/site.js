@@ -834,6 +834,75 @@
       });
     }
   }
+  // ------------------------------------------------------------------ CSFRBench: the hidden target, its examples, the learner
+  function benchFig() {
+    var run = window.LEWI_HERO, G = window.LEWI_GRAPHS;
+    var tg = $('bench-target');
+    if (tg && run) targetGraph(tg, run.teacher, {width: 220, levelH: 30, nodeR: 6.4, leafR: 3.2, pad: 10});
+    // examples: eight inputs and the output per row (a schematic: random inputs on [-1, 1])
+    var ex = $('bench-examples');
+    if (ex) {
+      var Wd = 236, rows = 7, cell = 17, gap = 3, seed = 7;
+      function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647 * 2 - 1; }
+      ex.setAttribute('viewBox', '0 0 ' + Wd + ' ' + (22 + rows * (cell + gap)));
+      txt(ex, 4 * (cell + gap) - gap / 2, 13, 'x', 'bx-h', {'text-anchor': 'middle'});
+      txt(ex, 8 * (cell + gap) + 22 + cell / 2, 13, 'y', 'bx-h', {'text-anchor': 'middle'});
+      for (var r = 0; r < rows; r++) {
+        var y = 22 + r * (cell + gap), sum = 0;
+        for (var c = 0; c < 8; c++) {
+          var v = rnd(); sum += v;
+          el('rect', {x: c * (cell + gap), y: y, width: cell, height: cell, rx: 3, 'class': 'bx-in', 'fill-opacity': (0.12 + 0.5 * (v + 1) / 2).toFixed(2)}, ex);
+        }
+        el('path', {d: 'M' + (8 * (cell + gap) + 3) + ' ' + (y + cell / 2) + 'h12m-4 -4l4 4l-4 4', 'class': 'bx-arrow'}, ex);
+        el('rect', {x: 8 * (cell + gap) + 22, y: y, width: cell, height: cell, rx: 3, 'class': 'bx-out', 'fill-opacity': (0.2 + 0.6 * Math.abs(Math.tanh(sum / 3))).toFixed(2)}, ex);
+      }
+    }
+    // the learner: a dense network that sees only the examples
+    var ln = $('bench-learner');
+    if (ln) {
+      var cols = [8, 6, 6, 1], Wl = 220, Hl = 170, xs = [18, 82, 146, 204];
+      ln.setAttribute('viewBox', '0 0 ' + Wl + ' ' + Hl);
+      function py(n, i) { return n === 1 ? Hl / 2 : 14 + i * (Hl - 28) / (n - 1); }
+      var gL = el('g', {'class': 'bl-e'}, ln);
+      for (var l = 0; l < cols.length - 1; l++) {
+        for (var a = 0; a < cols[l]; a++) for (var b = 0; b < cols[l + 1]; b++) {
+          el('line', {x1: xs[l], y1: py(cols[l], a), x2: xs[l + 1], y2: py(cols[l + 1], b)}, gL);
+        }
+      }
+      cols.forEach(function (n, l) {
+        for (var i = 0; i < n; i++) el('circle', {cx: xs[l], cy: py(n, i), r: l === 3 ? 6 : 4.6, 'class': l === 3 ? 'bl-out' : 'bl-n'}, ln);
+      });
+    }
+    // the six graph families
+    var host = $('bench-graphs');
+    if (!host || !G) return;
+    var FAM = [['Depth-4 tree', 'Depth-4 tree', 'hierarchy'], ['Depth-5 tree', 'Depth-5 tree', 'deeper, 16 inputs'],
+               ['Depth-3 reuse DAG', 'Reuse DAG', 'shared pieces'], ['Sampled depth-4 DAG', 'Sampled DAGs', 'random graphs'],
+               ['Flat modules', 'Flat modules', 'parallel pieces'], ['High-arity node', 'High-arity node', 'no small pieces']];
+    FAM.forEach(function (f) {
+      var g = G.filter(function (x) { return x.title === f[0]; })[0];
+      if (!g) return;
+      var card = document.createElement('figure');
+      card.className = 'bg-card';
+      var svg = el('svg', {'aria-hidden': 'true'}, card);
+      var xs2 = g.nodes.map(function (n) { return n.x; }), ys2 = g.nodes.map(function (n) { return n.y; });
+      var x0 = Math.min.apply(null, xs2), x1 = Math.max.apply(null, xs2), top = Math.max.apply(null, ys2);
+      var Wg = 150, Hg = 92, pad = 8;
+      svg.setAttribute('viewBox', '0 0 ' + Wg + ' ' + Hg);
+      function PX(n) { return pad + (n.x - x0) / ((x1 - x0) || 1) * (Wg - 2 * pad); }
+      function PY(n) { return Hg - pad - n.y / (top || 1) * (Hg - 2 * pad); }
+      var gE = el('g', {'class': 'bg-e'}, svg);
+      g.edges.forEach(function (e) { var a = g.nodes[e[0]], b = g.nodes[e[1]]; el('line', {x1: PX(a), y1: PY(a), x2: PX(b), y2: PY(b)}, gE); });
+      g.nodes.forEach(function (n) {
+        el('circle', {cx: PX(n), cy: PY(n), r: n.kind === 'input' ? (g.nodes.length > 20 ? 2.2 : 2.8) : 4.4, 'class': 'bg-' + n.kind}, svg);
+      });
+      var cap = document.createElement('figcaption');
+      cap.innerHTML = '<b>' + f[1] + '</b><span>' + f[2] + '</span>';
+      card.appendChild(cap);
+      host.appendChild(card);
+    });
+  }
+
   // ------------------------------------------------------------------ world-model grid (Figure 7)
   var RDBU = ['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#f7f7f7', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'];
   function isDark() { return token('--wm-mid').toLowerCase() !== '#f7f7f7'; }
@@ -899,14 +968,18 @@
       });
       lab.addEventListener('pointerleave', hideTip);
     });
-    // colour scale
-    var sx = gridW + 16, sw = 84, sy = top + D.baselines.length * ch + 30;
-    var defs = el('defs', null, svg), lg = el('linearGradient', {id: 'wmScale'}, defs);
+    // colour scale: a vertical bar beside the grid, LeWi better (blue) at the bottom
+    var sx = gridW + 18, sw = 11, sy = top, sh = D.baselines.length * ch;
+    var defs = el('defs', null, svg), lg = el('linearGradient', {id: 'wmScale', x1: 0, y1: 1, x2: 0, y2: 0}, defs);
     for (var k = 0; k <= 10; k++) el('stop', {offset: k * 10 + '%', 'stop-color': divColor(-CLIP + k * 2 * CLIP / 10, CLIP)}, lg);
-    el('rect', {x: sx, y: sy, width: sw, height: 9, fill: 'url(#wmScale)', rx: 2}, svg);
-    txt(svg, sx, sy + 22, '−0.75', 'wm-scale-t');
-    txt(svg, sx + sw, sy + 22, '+0.75', 'wm-scale-t', {'text-anchor': 'end'});
-    txt(svg, sx, sy + 38, 'blue: LeWi better', 'wm-scale-k');
+    el('rect', {x: sx, y: sy, width: sw, height: sh, fill: 'url(#wmScale)', rx: 3}, svg);
+    [[CLIP, '+0.75'], [0, '0'], [-CLIP, '−0.75']].forEach(function (t) {
+      var y = sy + (CLIP - t[0]) / (2 * CLIP) * sh;
+      el('line', {x1: sx + sw, x2: sx + sw + 4, y1: y, y2: y, 'class': 'wm-scale-tick'}, svg);
+      txt(svg, sx + sw + 8, y + 4, t[1], 'wm-scale-t');
+    });
+    txt(svg, sx, sy + sh + 22, 'blue:', 'wm-scale-k');
+    txt(svg, sx, sy + sh + 38, 'LeWi better', 'wm-scale-k');
   }
 
 
@@ -1075,6 +1148,7 @@
   safe(sheet);
   safe(hero);
   safe(piecesFig);
+  safe(benchFig);
   safe(gapFig);
   safe(stepperFig);
   safe(patternFig);

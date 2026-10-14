@@ -18,9 +18,9 @@
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/fonts.css?v=202610141433">
-<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610141433">
-<link rel="stylesheet" href="assets/css/site.css?v=202610141433">
+<link rel="stylesheet" href="assets/css/fonts.css?v=202610141450">
+<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610141450">
+<link rel="stylesheet" href="assets/css/site.css?v=202610141450">
 </head>
 <body>
 
@@ -74,10 +74,27 @@
   </div>
 </section>
 
+<section class="band band-alt" id="benchmark" aria-labelledby="bench-h">
+  <div class="wrap">
+    <header class="sec-head">
+      <h2 id="bench-h">CSFRBench: the pieces are known, but hidden</h2>
+      <p class="sec-lede">A benchmark of targets built from small pieces on a graph we know. The learner sees only input&ndash;output examples; the graph is used only to score it.</p>
+    </header>
+    <div class="bench-flow">
+      <figure class="bf-card bf-hidden"><svg id="bench-target" aria-hidden="true"></svg><figcaption><b>Target</b><span>Small pieces on a known graph, kept from the learner.</span></figcaption></figure>
+      <div class="bf-arrow" aria-hidden="true"><svg viewBox="0 0 40 16"><path d="M2 8h34m-7-6l7 6l-7 6"/></svg></div>
+      <figure class="bf-card"><svg id="bench-examples" aria-hidden="true"></svg><figcaption><b>Examples</b><span>Random inputs and the output. This is all the learner sees.</span></figcaption></figure>
+      <div class="bf-arrow" aria-hidden="true"><svg viewBox="0 0 40 16"><path d="M2 8h34m-7-6l7 6l-7 6"/></svg></div>
+      <figure class="bf-card"><svg id="bench-learner" aria-hidden="true"></svg><figcaption><b>Learner</b><span>Trained on the examples, then scored against the graph.</span></figcaption></figure>
+    </div>
+    <div class="bench-graphs" id="bench-graphs" role="img" aria-label="The six graph families of CSFRBench: depth-4 tree, depth-5 tree, reuse DAG, sampled DAGs, flat modules and a high-arity node."></div>
+  </div>
+</section>
+
 <section class="band band-alt" id="gap" aria-labelledby="gap-h">
   <div class="wrap">
     <header class="sec-head">
-      <h2 id="gap-h">Standard networks miss most of this gain</h2>
+      <h2 id="gap-h">Standard networks miss most of the gain</h2>
       <p class="sec-lede">A network given the target&rsquo;s graph learns much faster. Dense and sparse baselines stay far behind. LeWi is not given the graph.</p>
     </header>
     <div class="gapbox">
@@ -188,13 +205,13 @@
 
 <div class="tip" id="tip" role="tooltip"></div>
 
-<script src="assets/data/hero.js?v=202610141433"></script>
-<script src="assets/data/pieces.js?v=202610141433" defer></script>
-<script src="assets/data/curves.js?v=202610141433" defer></script>
-<script src="assets/data/graphs.js?v=202610141433" defer></script>
-<script src="assets/data/gallery.js?v=202610141433" defer></script>
-<script src="assets/data/alignment.js?v=202610141433" defer></script>
-<script src="assets/data/worldmodel.js?v=202610141433" defer></script>
-<script src="assets/js/site.js?v=202610141433" defer></script>
+<script src="assets/data/hero.js?v=202610141450"></script>
+<script src="assets/data/pieces.js?v=202610141450" defer></script>
+<script src="assets/data/curves.js?v=202610141450" defer></script>
+<script src="assets/data/graphs.js?v=202610141450" defer></script>
+<script src="assets/data/gallery.js?v=202610141450" defer></script>
+<script src="assets/data/alignment.js?v=202610141450" defer></script>
+<script src="assets/data/worldmodel.js?v=202610141450" defer></script>
+<script src="assets/js/site.js?v=202610141450" defer></script>
 </body>
 </html>
