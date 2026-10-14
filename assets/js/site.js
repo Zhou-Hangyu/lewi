@@ -1,5 +1,6 @@
-/* LeWi project page: the hero training replay, the method sketch, the benchmark graphs, the result charts,
-   the learned-wiring gallery and small page behaviours. Plain JavaScript, no dependencies. */
+/* LeWi project page: the hero training replay, the motivation figures (one function or seven pieces, the gap),
+   LeWi in four steps, the results pattern, the learned-wiring gallery and the world-model grid with task clips.
+   Plain JavaScript, no dependencies. The theme follows the reader's system setting. */
 (function () {
   'use strict';
 
@@ -45,28 +46,11 @@
   readPal();
   function onTheme(fn) { themeListeners.push(fn); }
   function themeChanged() { readPal(); themeListeners.forEach(function (fn) { safe(fn); }); }
-  function themeToggle() {
-    var mq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
-    function effective() { return root.getAttribute('data-theme') || (mq && mq.matches ? 'dark' : 'light'); }
-    function label() {
-      var next = effective() === 'dark' ? 'light' : 'dark';
-      document.querySelectorAll('[data-theme-toggle]').forEach(function (b) { b.setAttribute('aria-label', 'Switch to ' + next + ' mode'); });
-    }
-    document.querySelectorAll('[data-theme-toggle]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var next = effective() === 'dark' ? 'light' : 'dark';
-        root.setAttribute('data-theme', next);
-        try { localStorage.setItem('lewi-theme', next); } catch (err) { /* private mode: the choice lasts for this page */ }
-        label();
-        themeChanged();
-      });
-    });
-    if (mq) {
-      var f = function () { if (!root.getAttribute('data-theme')) { label(); themeChanged(); } };
-      if (mq.addEventListener) mq.addEventListener('change', f); else if (mq.addListener) mq.addListener(f);
-    }
-    label();
+  if (window.matchMedia) {
+    var mqDark = matchMedia('(prefers-color-scheme: dark)');
+    if (mqDark.addEventListener) mqDark.addEventListener('change', themeChanged); else if (mqDark.addListener) mqDark.addListener(themeChanged);
   }
+
   function sup(n) {
     var d = '⁰¹²³⁴⁵⁶⁷⁸⁹';
     return String(n).split('').map(function (c) { return d[+c]; }).join('');
@@ -320,8 +304,9 @@
     var run = window.LEWI_HERO, cv = $('hero-net');
     if (!run || !cv) return;
     var net = new Net(run);
-    var view = new Viewer(cv, {yaw: run.view.yaw, pitch: run.view.pitch, sway: REDUCE ? null : {amp: 0.6, rate: 0.2}, fill: 0.44});
-    var style = {edgeWidth: 0.7, edgeAlpha: 0.24, edgeAlphaDim: 0.07, radius: 3.5, dimAlpha: 0.55, cube: false};
+    if ($('hero-target')) targetGraph($('hero-target'), run.teacher, {width: 132, levelH: 21});
+    var view = new Viewer(cv, {yaw: run.view.yaw, pitch: run.view.pitch, sway: REDUCE ? null : {amp: 0.6, rate: 0.2}, fill: 0.42});
+    var style = {edgeWidth: 0.7, edgeAlpha: 0.24, edgeAlphaDim: 0.07, radius: 3.5, dimAlpha: 0.55, cube: false, dx: -0.04, dy: 0.06};
     var F = net.frames, total = run.total_steps, per = total / (F - 1);
     var PLAY = 17000, HOLD = 4500, FADE = 450, GAMMA = 1.8;
     var st = {playing: !REDUCE, phase: 'play', t: 0, step: REDUCE ? run.best_step : 0};
@@ -370,464 +355,326 @@
     requestAnimationFrame(loop);
   }
 
-  // ------------------------------------------------------------------ the idea in three pictures: place, connect, rewire
-  function stepsFigs() {
-    var W = 300, H = 190, RAD = 70;
-    var S0 = [[52, 52], [120, 150], [190, 58], [250, 140]], R0 = [[96, 98], [170, 112], [238, 72]];
-    var S1 = [[58, 76], [66, 132], [212, 60], [240, 128]], R1 = [[104, 104], [110, 152], [238, 84]];
-    var GROUPS = [{cx: 84, cy: 116, rx: 58, ry: 58, c: '#0072b2'}, {cx: 228, cy: 94, rx: 44, ry: 56, c: '#009e73'}];
-    function base(id) {
-      var svg = $(id);
-      if (svg) svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-      return svg;
+  // ------------------------------------------------------------------ helpers shared by the new figures
+  function once(node, cb) {
+    var done = false;
+    onVisible(node, function (v) { if (v && !done) { done = true; cb(); } });
+  }
+  function sub(parent, x, y, base, index, cls, extra) {
+    var t = txt(parent, x, y, base, cls, extra);
+    var s = el('tspan', {'baseline-shift': 'sub', 'font-size': '0.68em'}, t);
+    s.textContent = index;
+    return t;
+  }
+  function aulc(points) {
+    var s = 0;
+    for (var i = 1; i < points.length; i++) {
+      s += (Math.log2(points[i].n) - Math.log2(points[i - 1].n)) * (points[i].mean + points[i - 1].mean) / 2;
     }
-    function send(svg, p, cls) { el('rect', {x: p[0] - 6, y: p[1] - 6, width: 12, height: 12, rx: 1.5, 'class': cls || 'st-send'}, svg); }
-    function recv(svg, p, cls) { el('path', {d: 'M' + p[0] + ' ' + (p[1] - 8) + 'l7.5 13h-15z', 'class': cls || 'st-recv'}, svg); }
-    function nodes(svg, S, R, cls) { S.forEach(function (p) { send(svg, p, cls); }); R.forEach(function (p) { recv(svg, p, cls); }); }
-    function links(svg, S, R) {
-      var top = 1 / (1 + Math.exp(-1.5));
-      R.forEach(function (r) {
-        S.forEach(function (q) {
-          var d = Math.hypot(r[0] - q[0], r[1] - q[1]);
-          if (d >= RAD) return;
-          var g = 1 / (1 + Math.exp(-1.5 * (1 - (d / RAD) * (d / RAD)))), w = (g - 0.5) / (top - 0.5);
-          el('line', {x1: q[0], y1: q[1], x2: r[0], y2: r[1], 'class': 'st-link', 'stroke-width': (1.3 + 2.4 * w).toFixed(2), 'stroke-opacity': (0.35 + 0.65 * w).toFixed(2)}, svg);
-        });
+    return s / (Math.log2(points[points.length - 1].n) - Math.log2(points[0].n));
+  }
+  function armOf(panel, test) { return panel.arms.filter(test)[0]; }
+
+  // ------------------------------------------------------------------ motivation: one function of 8 inputs, or 7 pieces of 2
+  function piecesFig() {
+    var D = window.LEWI_PIECES, svg = $('pieces-svg');
+    if (!D || !svg) return;
+    var W = 800, H = 384, X_IN = 64, X_OUT = 752, Y0 = 64, PITCH = 40, TILE = 62;
+    var FX0 = 150, FX1 = 676, FY0 = 34, FY1 = 374, XL = {1: 278, 2: 428, 3: 578};
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    function iy(k) { return Y0 + k * PITCH; }
+    var YC = iy(3.5);
+    var gW = el('g', {'class': 'pc-g pc-whole'}, svg), gP = el('g', {'class': 'pc-g pc-pieces'}, svg);
+    for (var k = 0; k < 8; k++) el('line', {x1: X_IN + 7, y1: iy(k), x2: FX0, y2: iy(k), 'class': 'pc-wire'}, gW);
+    el('rect', {x: FX0, y: FY0, width: FX1 - FX0, height: FY1 - FY0, rx: 14, 'class': 'pc-box'}, gW);
+    txt(gW, (FX0 + FX1) / 2, YC + 10, 'f(x₁, …, x₈)', 'pc-f', {'text-anchor': 'middle'});
+    el('line', {x1: FX1, y1: YC, x2: X_OUT - 8, y2: YC, 'class': 'pc-wire'}, gW);
+    el('rect', {x: FX0, y: FY0, width: FX1 - FX0, height: FY1 - FY0, rx: 14, 'class': 'pc-frame'}, gP);
+    [1, 2, 3].forEach(function (lv) { txt(gP, XL[lv], FY0 - 12, 'Level ' + lv, 'pc-lvl', {'text-anchor': 'middle'}); });
+    var centre = D.node_x.map(function (nx, v) { return [XL[D.level[v]], iy(nx)]; });
+    function slot(r) { return r < D.A ? D.leaf_slot[r] : D.node_x[r - D.A]; }
+    D.parents.forEach(function (refs, v) {
+      var c = centre[v];
+      refs.slice().sort(function (a, b) { return slot(a) - slot(b); }).forEach(function (r, j) {
+        var ty = c[1] + (j === 0 ? -TILE / 4 : TILE / 4), sx, sy;
+        if (r < D.A) { sx = X_IN + 7; sy = iy(D.leaf_slot[r]); }
+        else { sx = centre[r - D.A][0] + TILE / 2; sy = centre[r - D.A][1]; }
+        el('line', {x1: sx, y1: sy, x2: c[0] - TILE / 2, y2: ty, 'class': 'pc-wire'}, gP);
       });
+    });
+    D.level.forEach(function (lv, v) {
+      var c = centre[v];
+      el('image', {href: 'assets/img/piece-' + v + '.png', x: c[0] - TILE / 2, y: c[1] - TILE / 2, width: TILE, height: TILE, preserveAspectRatio: 'none'}, gP);
+      el('rect', {x: c[0] - TILE / 2, y: c[1] - TILE / 2, width: TILE, height: TILE, fill: 'none', stroke: D.colors[v], 'stroke-width': 3}, gP);
+    });
+    var root = centre[D.readout[0]];
+    el('line', {x1: root[0] + TILE / 2, y1: root[1], x2: X_OUT - 8, y2: YC, 'class': 'pc-wire'}, gP);
+    for (k = 0; k < 8; k++) {
+      el('circle', {cx: X_IN, cy: iy(k), r: 7, 'class': 'pc-in'}, svg);
+      sub(svg, X_IN - 16, iy(k) + 5, 'x', String(k + 1), 'pc-lab', {'text-anchor': 'end'});
     }
-    var a = base('step-1');
-    if (a) {
-      el('line', {x1: 16, y1: 176, x2: 58, y2: 176, 'class': 'st-axis'}, a);
-      el('line', {x1: 16, y1: 176, x2: 16, y2: 134, 'class': 'st-axis'}, a);
-      txt(a, 62, 180, 'e₁', 'st-lab'); txt(a, 10, 128, 'e₂', 'st-lab');
-      nodes(a, S0, R0);
+    el('circle', {cx: X_OUT, cy: YC, r: 8, 'class': 'pc-out'}, svg);
+    txt(svg, X_OUT + 16, YC + 7, 'y', 'pc-lab', {'font-size': '20px'});
+    var buttons = document.querySelectorAll('.pieces .seg-b'), counts = document.querySelectorAll('.counts .count'), auto = !REDUCE;
+    function show(view) {
+      svg.classList.toggle('show-pieces', view === 'pieces');
+      buttons.forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-view') === view)); });
+      counts.forEach(function (c) { c.classList.toggle('on', c.getAttribute('data-view') === view); });
     }
-    var b = base('step-2');
-    if (b) {
-      el('circle', {cx: R0[1][0], cy: R0[1][1], r: RAD, 'class': 'st-ring'}, b);
-      el('line', {x1: R0[1][0], y1: R0[1][1], x2: R0[1][0] + RAD * 0.707, y2: R0[1][1] + RAD * 0.707, 'class': 'st-trail'}, b);
-      txt(b, R0[1][0] + RAD * 0.36 + 6, R0[1][1] + RAD * 0.36 + 2, 'R', 'st-lab');
-      links(b, S0, R0);
-      nodes(b, S0, R0);
-    }
-    var c = base('step-3');
-    if (c) {
-      GROUPS.forEach(function (g) { el('ellipse', {cx: g.cx, cy: g.cy, rx: g.rx, ry: g.ry, fill: g.c, 'fill-opacity': 0.08, stroke: g.c, 'stroke-opacity': 0.35, 'stroke-dasharray': '3 4'}, c); });
-      S0.concat(R0).forEach(function (p, i) {
-        var q = i < S0.length ? S1[i] : R1[i - S0.length];
-        el('line', {x1: p[0], y1: p[1], x2: q[0], y2: q[1], 'class': 'st-trail'}, c);
-        el('circle', {cx: p[0], cy: p[1], r: 2.2, 'class': 'st-ghost'}, c);
-      });
-      links(c, S1, R1);
-      nodes(c, S1, R1);
-    }
+    buttons.forEach(function (b) { b.addEventListener('click', function () { auto = false; show(b.getAttribute('data-view')); }); });
+    show('whole');
+    once(svg, function () { setTimeout(function () { if (auto) show('pieces'); }, 1700); });
   }
 
-  // ------------------------------------------------------------------ method sketch: drag the neurons
-  var gateDot = null;
-  function method() {
-    var svg = $('method-svg');
-    if (!svg) return;
-    var W = 640, H = 410, UNIT = 140, R2 = 1.5, R = Math.sqrt(R2) * UNIT;
+  // ------------------------------------------------------------------ the gap: Dense and baselines against GraphOracle, then LeWi
+  function gapFig() {
+    var P = (window.LEWI_CURVES || [])[0], svg = $('gap-svg');
+    if (!P || !svg) return;
+    var W = 860, H = 440, x0 = 80, x1 = 836, y0 = 14, y1 = 372;
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-    var defs = el('defs', null, svg);
-    var grad = el('radialGradient', {id: 'gateShade'}, defs);
-    el('stop', {offset: '0%', 'stop-color': 'currentColor', 'stop-opacity': 0.13}, grad);
-    el('stop', {offset: '70%', 'stop-color': 'currentColor', 'stop-opacity': 0.06}, grad);
-    el('stop', {offset: '100%', 'stop-color': 'currentColor', 'stop-opacity': 0.02}, grad);
-    svg.style.color = 'var(--ink)';
-    el('rect', {x: 0, y: 0, width: W, height: H, 'class': 'ms-bg'}, svg);
-    var gGrid = el('g', null, svg);
-    for (var gx = 40; gx < W; gx += 40) for (var gy = 40; gy < H; gy += 40) el('circle', {cx: gx, cy: gy, r: 1, fill: 'var(--hair)'}, gGrid);
-    var gRing = el('g', null, svg), gLink = el('g', null, svg), gNode = el('g', null, svg);
-    var ring = el('circle', {r: R, 'class': 'ms-ring'}, gRing);
-    var rLine = el('line', {'class': 'gp-r', opacity: 0}, gRing);
-    var rLab = txt(gRing, 0, 0, 'R', 'ms-r-label', {opacity: 0});
-
-    var nodes = [
-      {k: 's', x: 120, y: 110}, {k: 's', x: 165, y: 262}, {k: 's', x: 300, y: 196}, {k: 's', x: 420, y: 92},
-      {k: 's', x: 468, y: 300}, {k: 's', x: 578, y: 180},
-      {k: 'r', x: 236, y: 318}, {k: 'r', x: 252, y: 92}, {k: 'r', x: 392, y: 214}, {k: 'r', x: 560, y: 332}, {k: 'r', x: 76, y: 196}
-    ];
-    var send = nodes.filter(function (n) { return n.k === 's'; }), recv = nodes.filter(function (n) { return n.k === 'r'; });
-    var links = [];
-    recv.forEach(function (r) {
-      send.forEach(function (s) {
-        var line = el('line', {'class': 'ms-link'}, gLink);
-        var item = {r: r, s: s, line: line};
-        line.addEventListener('pointerenter', function () { focusPair(item); });
-        line.addEventListener('pointerleave', function () { focusPair(null); });
-        links.push(item);
-      });
-    });
-    nodes.forEach(function (n) {
-      var g = el('g', {'class': 'ms-node'}, gNode);
-      el('circle', {r: 22, 'class': 'halo'}, g);
-      if (n.k === 's') el('rect', {x: -8, y: -8, width: 16, height: 16, rx: 2, 'class': 'ms-send'}, g);
-      else el('path', {d: 'M0 -11 L10.5 7.5 L-10.5 7.5 Z', 'class': 'ms-recv'}, g);
-      n.g = g;
-      g.addEventListener('pointerdown', function (e) { startDrag(n, e); });
-      g.addEventListener('pointerenter', function () { if (!drag) setFocus(n); });
-      g.addEventListener('pointerleave', function () { if (!drag) setFocus(null); });
-    });
-    var keyY = H - 16;
-    var kg = el('g', null, svg);
-    el('rect', {x: 18, y: keyY - 9, width: 11, height: 11, rx: 1.5, 'class': 'ms-send'}, kg);
-    txt(kg, 35, keyY, 'layer ℓ', 'ms-key');
-    el('path', {d: 'M' + 104 + ' ' + (keyY - 10) + ' l7 12 h-14 z', 'class': 'ms-recv'}, kg);
-    txt(kg, 117, keyY, 'layer ℓ+1', 'ms-key');
-
-    var focus = null, pairFocus = null, drag = null, touched = null, idle = !REDUCE;
-    var read = $('method-read');
-    function gate(d) { var sc = R2 - d * d; return {s: sc, g: 1 / (1 + Math.exp(-sc)), on: sc > 0}; }
-    function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y) / UNIT; }
-    function setFocus(n) { focus = n; update(); }
-    function focusPair(p) { pairFocus = p; if (p) touched = p; update(); }
-    function update() {
-      var active = 0;
-      nodes.forEach(function (n) { n.g.setAttribute('transform', 'translate(' + n.x.toFixed(1) + ' ' + n.y.toFixed(1) + ')'); });
-      links.forEach(function (l) {
-        var d = dist(l.r, l.s), q = gate(d);
-        l.d = d; l.q = q;
-        if (!q.on) { l.line.style.display = 'none'; return; }
-        active++;
-        l.line.style.display = '';
-        l.line.setAttribute('x1', l.s.x); l.line.setAttribute('y1', l.s.y);
-        l.line.setAttribute('x2', l.r.x); l.line.setAttribute('y2', l.r.y);
-        var w = (q.g - 0.5) / (1 / (1 + Math.exp(-R2)) - 0.5);
-        l.line.setAttribute('stroke-width', (1.2 + 3.2 * w).toFixed(2));
-        l.line.setAttribute('stroke-opacity', (0.3 + 0.7 * w).toFixed(2));
-        var rel = focus ? (l.r === focus || l.s === focus) : pairFocus ? l === pairFocus : true;
-        l.line.classList.toggle('dim', !rel);
-        l.line.classList.toggle('hot', pairFocus === l);
-      });
-      var c = focus || (pairFocus && pairFocus.r);
-      if (c) {
-        ring.setAttribute('cx', c.x); ring.setAttribute('cy', c.y); ring.classList.add('on');
-        rLine.setAttribute('x1', c.x); rLine.setAttribute('y1', c.y);
-        rLine.setAttribute('x2', c.x + R * 0.7071); rLine.setAttribute('y2', c.y - R * 0.7071);
-        rLine.setAttribute('opacity', 1);
-        rLab.setAttribute('x', c.x + R * 0.36 + 6); rLab.setAttribute('y', c.y - R * 0.36 - 4); rLab.setAttribute('opacity', 1);
-      } else { ring.classList.remove('on'); rLine.setAttribute('opacity', 0); rLab.setAttribute('opacity', 0); }
-      var p = pairFocus || touched;
-      if (!p && focus) {
-        var best = null;
-        links.forEach(function (l) { if ((l.r === focus || l.s === focus) && (!best || l.d < best.d)) best = l; });
-        p = best;
-      }
-      var total = links.length;
-      if (p) {
-        read.textContent = 'd = ' + p.d.toFixed(2) + ' · s = R² − d² = ' + p.q.s.toFixed(2) + ' · ' +
-          (p.q.on ? 'gate σ(s) = ' + p.q.g.toFixed(2) : 'outside R: masked') + ' · ' + active + ' of ' + total + ' connections active';
-        if (gateDot) gateDot(p.d);
-      } else {
-        read.textContent = active + ' of ' + total + ' possible connections active. Drag a neuron.';
-      }
-    }
-    function toSvg(e) {
-      var pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
-      return pt.matrixTransform(svg.getScreenCTM().inverse());
-    }
-    function startDrag(n, e) {
-      e.preventDefault();
-      idle = false;
-      var p = toSvg(e);
-      drag = {n: n, dx: n.x - p.x, dy: n.y - p.y, id: e.pointerId};
-      n.g.classList.add('drag');
-      setFocus(n);
-      window.addEventListener('pointermove', moveDrag);
-      window.addEventListener('pointerup', endDrag);
-      window.addEventListener('pointercancel', endDrag);
-    }
-    function moveDrag(e) {
-      if (!drag) return;
-      var p = toSvg(e);
-      drag.n.x = clamp(p.x + drag.dx, 14, W - 14);
-      drag.n.y = clamp(p.y + drag.dy, 14, H - 30);
-      var best = null;
-      links.forEach(function (l) { if ((l.r === drag.n || l.s === drag.n) && (!best || l.d < best.d)) best = l; });
-      touched = best;
-      update();
-    }
-    function endDrag() {
-      if (!drag) return;
-      drag.n.g.classList.remove('drag');
-      drag = null;
-      window.removeEventListener('pointermove', moveDrag);
-      window.removeEventListener('pointerup', endDrag);
-      window.removeEventListener('pointercancel', endDrag);
-      setFocus(null);
-    }
-    // shuffle: new positions, eased in
-    var seed = 7;
-    function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
-    $('method-shuffle').addEventListener('click', function () {
-      idle = false;
-      var from = nodes.map(function (n) { return [n.x, n.y]; }), to = [];
-      nodes.forEach(function (n, i) {
-        var x, y, ok, tries = 0;
-        do {
-          x = 40 + rnd() * (W - 80); y = 36 + rnd() * (H - 96); ok = true;
-          for (var j = 0; j < to.length; j++) if (Math.hypot(to[j][0] - x, to[j][1] - y) < 62) ok = false;
-        } while (!ok && ++tries < 60);
-        to.push([x, y]);
-      });
-      var t0 = performance.now();
-      (function step(now) {
-        var t = clamp((now - t0) / 650, 0, 1), e = 1 - Math.pow(1 - t, 3);
-        nodes.forEach(function (n, i) { n.x = from[i][0] + (to[i][0] - from[i][0]) * e; n.y = from[i][1] + (to[i][1] - from[i][1]) * e; });
-        update();
-        if (t < 1) requestAnimationFrame(step);
-      })(t0);
-    });
-    // until the reader touches the sketch, one neuron drifts through the others, so connections switch on and off
-    var mover = recv[2], home = {x: mover.x, y: mover.y}, t0 = null, running = false;
-    function drift(now) {
-      if (!idle || !running) { running = false; return; }
-      if (t0 === null) t0 = now;
-      var t = (now - t0) / 1000;
-      mover.x = home.x + Math.sin(t * 0.42) * 165;
-      mover.y = home.y + Math.sin(t * 0.84) * 70;
-      touched = null;
-      update();
-      requestAnimationFrame(drift);
-    }
-    onVisible(svg, function (v) {
-      if (v && idle && !running) { running = true; t0 = null; requestAnimationFrame(drift); }
-      if (!v) running = false;
-    });
-    svg.addEventListener('pointerdown', function () { idle = false; });
-    update();
-  }
-
-  // ------------------------------------------------------------------ gate profile: the multiplier against distance
-  function gateProfile() {
-    var svg = $('gate-profile');
-    if (!svg) return;
-    var W = 640, H = 196, x0 = 54, x1 = 620, y0 = 18, y1 = 150, R2 = 1.5, R = Math.sqrt(R2), DMAX = 2.0;
-    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-    function X(d) { return x0 + d / DMAX * (x1 - x0); }
+    var ns = P.window, lx0 = Math.log2(ns[0]) - 0.2, lx1 = Math.log2(ns[ns.length - 1]) + 0.2;
+    function X(n) { return x0 + (Math.log2(n) - lx0) / (lx1 - lx0) * (x1 - x0); }
     function Y(v) { return y1 - v * (y1 - y0); }
-    function sig(s) { return 1 / (1 + Math.exp(-s)); }
-    [0, 0.5, sig(R2)].forEach(function (v, i) {
-      el('line', {x1: x0, x2: x1, y1: Y(v), y2: Y(v), 'class': 'gp-axis', opacity: i ? 0.6 : 1}, svg);
-      txt(svg, x0 - 8, Y(v) + 4, i === 2 ? v.toFixed(2) : String(v), 'gp-tick', {'text-anchor': 'end'});
-    });
-    [0, 0.5, 1, 1.5, 2].forEach(function (d) { txt(svg, X(d), y1 + 18, d.toFixed(1), 'gp-tick', {'text-anchor': 'middle'}); });
-    txt(svg, x1, y1 + 38, 'distance d between the two neurons', 'gp-label', {'text-anchor': 'end'});
-    txt(svg, x0 - 44, y0 - 4, 'multiplier on W', 'gp-label');
-    var soft = '', on = '', area = 'M' + X(0) + ' ' + Y(0);
-    for (var i = 0; i <= 200; i++) {
-      var d = DMAX * i / 200, v = sig(R2 - d * d);
-      soft += (i ? 'L' : 'M') + X(d).toFixed(1) + ' ' + Y(v).toFixed(1);
-      if (d <= R) { on += (i ? 'L' : 'M') + X(d).toFixed(1) + ' ' + Y(v).toFixed(1); area += 'L' + X(d).toFixed(1) + ' ' + Y(v).toFixed(1); }
-    }
-    area += 'L' + X(R) + ' ' + Y(0.5) + 'L' + X(R) + ' ' + Y(0) + 'Z';
-    on += 'L' + X(R) + ' ' + Y(0.5) + 'L' + X(R) + ' ' + Y(0) + 'L' + X(DMAX) + ' ' + Y(0);
-    el('path', {d: area, 'class': 'gp-area'}, svg);
-    el('path', {d: soft, 'class': 'gp-soft'}, svg);
-    el('path', {d: on, 'class': 'gp-on'}, svg);
-    el('line', {x1: X(R), x2: X(R), y1: y0 - 6, y2: y1, 'class': 'gp-r'}, svg);
-    txt(svg, X(R) + 6, y0 + 4, 'd = R', 'gp-label');
-    txt(svg, X(1.42), Y(0.47), 'σ(s) without the mask', 'gp-tick');
-    var dot = el('circle', {r: 5.5, cx: X(0.6), cy: Y(sig(R2 - 0.36)), 'class': 'gp-dot'}, svg);
-    gateDot = function (d) {
-      var dd = clamp(d, 0, DMAX), inside = dd < R, v = inside ? sig(R2 - dd * dd) : 0;
-      dot.setAttribute('cx', X(dd).toFixed(1));
-      dot.setAttribute('cy', Y(v).toFixed(1));
-      dot.classList.toggle('off', !inside);
-    };
-  }
-
-  // ------------------------------------------------------------------ benchmark graphs
-  function benchGraphs() {
-    var G = window.LEWI_GRAPHS, host = $('graphs');
-    if (!G || !host) return;
-    var UNIT = 26, PADX = 0.7, cols = [];
-    G.forEach(function (g) {
-      var xs = g.nodes.map(function (n) { return n.x; }), ys = g.nodes.map(function (n) { return n.y; });
-      var minX = Math.min.apply(null, xs) - PADX, maxX = Math.max.apply(null, xs) + PADX, maxY = Math.max.apply(null, ys);
-      var w = (maxX - minX) * UNIT, padY = 14, h = 5 * 1.25 * UNIT * 0.62 + 2 * padY;
-      var sy = (h - 2 * padY) / Math.max(1, maxY);
-      cols.push('minmax(0, ' + (maxX - minX).toFixed(2) + 'fr)');
-      var fig = document.createElement('figure');
-      fig.className = 'graph';
-      var svg = el('svg', {viewBox: '0 0 ' + w.toFixed(1) + ' ' + h.toFixed(1), role: 'img', 'aria-label': g.title}, fig);
-      function X(x) { return (x - minX) * UNIT; }
-      function Y(y) { return h - padY - y * sy; }
-      var ge = el('g', null, svg);
-      g.edges.forEach(function (e) {
-        var a = g.nodes[e[0]], b = g.nodes[e[1]];
-        el('line', {x1: X(a.x), y1: Y(a.y), x2: X(b.x), y2: Y(b.y), 'class': 'g-edge'}, ge);
-      });
-      g.nodes.forEach(function (n) {
-        el('circle', {cx: X(n.x), cy: Y(n.y), r: n.kind === 'input' ? 4.2 : 7, 'class': n.kind === 'input' ? 'g-in' : n.kind === 'readout' ? 'g-out' : 'g-fn'}, svg);
-      });
-      var cap = document.createElement('figcaption');
-      cap.textContent = g.title;
-      fig.appendChild(cap);
-      host.appendChild(fig);
-    });
-    host.style.setProperty('--cols', cols.join(' '));
-  }
-
-  // ------------------------------------------------------------------ learning curves (Figure 4)
-  var ORACLE_VAR = {'graph_oracle(levels=1)': 'var(--oracle-1)', 'graph_oracle(levels=2)': 'var(--oracle-2)',
-                    'graph_oracle(levels=all)': 'var(--oracle)', 'graph_oracle(levels=0)': 'var(--oracle-1)'};
-  function armColor(a) {
-    return a.kind === 'lewi' ? 'var(--lewi)' : a.kind === 'dense' ? 'var(--dense)' : a.kind === 'oracle' ? ORACLE_VAR[a.key] : 'var(--base)';
-  }
-  function fmtVal(v) { return v >= 100 ? v.toExponential(1).replace('e+', '×10^') : v >= 10 ? v.toFixed(1) : v.toFixed(3); }
-  function curves() {
-    var D = window.LEWI_CURVES, host = $('curves'), leg = $('curves-legend');
-    if (!D || !host) return;
-    var items = [['LeWi', 'var(--lewi)', 3, ''], ['Dense', 'var(--dense)', 2.2, ''], ['GraphOracle(1)', 'var(--oracle-1)', 1.9, '5 3.6'],
-                 ['GraphOracle(2)', 'var(--oracle-2)', 1.9, '5 3.6'], ['GraphOracle(all)', 'var(--oracle)', 1.9, '5 3.6'],
-                 ['Baselines: L0, RigL, BIMT, ℓ1, ℓ2, Fiedler', 'var(--base)', 1.3, '']];
-    items.forEach(function (it) {
-      var span = document.createElement('span');
-      span.className = 'it';
-      var s = el('svg', {viewBox: '0 0 26 10', 'aria-hidden': 'true'}, span);
-      el('line', {x1: 1, x2: 25, y1: 5, y2: 5, stroke: it[1], 'stroke-width': it[2], 'stroke-dasharray': it[3], 'stroke-linecap': 'round'}, s);
-      span.appendChild(document.createTextNode(it[0]));
-      leg.appendChild(span);
-    });
-    var W = 330, H = 236, L = 44, Rm = 10, T = 12, B = 208;
-    D.forEach(function (p) {
-      var box = document.createElement('div');
-      box.className = 'panel';
-      var h3 = document.createElement('h3'); h3.textContent = p.title; box.appendChild(h3);
-      var sub = document.createElement('p'); sub.className = 'sub';
-      sub.textContent = p.instances + ' target instances · n = 2' + sup(Math.log2(p.window[0])) + '…2' + sup(Math.log2(p.window[p.window.length - 1]));
-      box.appendChild(sub);
-      var svg = el('svg', {viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Test NMSE against training samples, ' + p.title}, box);
-      var lx0 = Math.log2(p.window[0] / 1.25), lx1 = Math.log2(p.window[p.window.length - 1] * 1.25);
-      function X(n) { return L + (Math.log2(n) - lx0) / (lx1 - lx0) * (W - L - Rm); }
-      function Y(v) { return B - v / p.top * (B - T); }
-      var step = p.step || p.top / 4;
-      for (var v = 0; v <= p.top + 1e-9; v += step) {
-        el('line', {x1: L, x2: W - Rm, y1: Y(v), y2: Y(v), 'class': v === 0 ? 'ax-l' : 'ax-g'}, svg);
-        txt(svg, L - 7, Y(v) + 3.5, (Math.round(v * 1000) / 1000).toString(), 'ax-t', {'text-anchor': 'end'});
-      }
-      var w0 = p.window, ticks = [w0[0], w0[Math.floor(w0.length / 2)], w0[w0.length - 1]];
-      ticks.forEach(function (n) {
-        el('line', {x1: X(n), x2: X(n), y1: B, y2: B + 4, 'class': 'ax-l'}, svg);
-        var t = txt(svg, X(n), B + 18, '2', 'ax-t', {'text-anchor': 'middle'});
-        var ts = el('tspan', {dy: -5, 'font-size': '8.5px'}, t); ts.textContent = String(Math.log2(n));
-      });
-      var order = ['baseline', 'oracle', 'dense', 'lewi'];
-      var drawn = [];
-      order.forEach(function (kind) {
-        p.arms.filter(function (a) { return a.kind === kind; }).forEach(function (a) {
-          var col = armColor(a), pts = a.points;
-          if (a.band) {
-            var up = [], dn = [];
-            pts.forEach(function (q) { if (q.mean <= p.top) { up.push(X(q.n).toFixed(1) + ' ' + Y(Math.min(q.hi, p.top)).toFixed(1)); dn.unshift(X(q.n).toFixed(1) + ' ' + Y(Math.max(q.lo, 0)).toFixed(1)); } });
-            if (up.length > 1) el('path', {d: 'M' + up.join('L') + 'L' + dn.join('L') + 'Z', 'class': 'bd ' + (kind === 'lewi' ? 'bd-lewi' : kind === 'dense' ? 'bd-dense' : 'bd-oracle'), fill: col}, svg);
-          }
-          var d = '', pen = false;
-          pts.forEach(function (q) {
-            if (q.mean > p.top) { pen = false; el('path', {d: 'M' + (X(q.n) - 4.5) + ' ' + (T - 3) + 'l4.5 -7 4.5 7z', 'class': 'caret'}, svg); return; }
-            d += (pen ? 'L' : 'M') + X(q.n).toFixed(1) + ' ' + Y(q.mean).toFixed(1);
-            pen = true;
-          });
-          var path = el('path', {d: d, 'class': 'ln ln-' + (kind === 'baseline' ? 'base' : kind), stroke: kind === 'oracle' ? col : null}, svg);
-          if (kind !== 'oracle') path.removeAttribute('stroke');
-          drawn.push({arm: a, path: path});
-        });
-      });
-      var xh = el('line', {y1: T, y2: B, 'class': 'xh'}, svg);
-      var dots = el('g', null, svg);
-      var hit = el('rect', {x: L, y: T - 10, width: W - L - Rm, height: B - T + 10, 'class': 'hit'}, svg);
-      function at(e) {
-        var pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
-        var q = pt.matrixTransform(svg.getScreenCTM().inverse()), best = 0;
-        p.window.forEach(function (n, i) { if (Math.abs(X(n) - q.x) < Math.abs(X(p.window[best]) - q.x)) best = i; });
-        return p.window[best];
-      }
-      hit.addEventListener('pointermove', function (e) {
-        var n = at(e);
-        box.classList.add('hover');
-        xh.setAttribute('x1', X(n)); xh.setAttribute('x2', X(n));
-        while (dots.firstChild) dots.removeChild(dots.firstChild);
-        var rows = [];
-        p.arms.forEach(function (a) {
-          var q = a.points.filter(function (z) { return z.n === n; })[0];
-          if (!q) return;
-          rows.push({a: a, q: q});
-          if (a.kind !== 'baseline' && q.mean <= p.top) el('circle', {cx: X(n), cy: Y(q.mean), r: a.kind === 'lewi' ? 4.2 : 3.3, fill: armColor(a), 'class': 'pt'}, dots);
-        });
-        rows.sort(function (u, w) { return u.q.mean - w.q.mean; });
-        var html = '<div class="tt-h">' + p.title + ' · n = 2' + sup(Math.log2(n)) + ' = ' + fmtInt(n) + '</div>';
-        rows.forEach(function (r) {
-          var strong = r.a.kind === 'lewi' || r.a.kind === 'dense';
-          html += '<div class="tt-r' + (strong ? '' : ' tt-dim') + '"><span><i class="sw" style="background:' + (r.a.kind === 'baseline' ? '#a3aab5' : r.a.color) + '"></i>' +
-            (strong ? '<b>' + r.a.name + '</b>' : r.a.name) + '</span><span>' + fmtVal(r.q.mean) + '</span></div>';
-        });
-        showTip(html, e.clientX, e.clientY);
-      });
-      hit.addEventListener('pointerleave', function () { box.classList.remove('hover'); while (dots.firstChild) dots.removeChild(dots.firstChild); hideTip(); });
-      host.appendChild(box);
-    });
-  }
-
-  // ------------------------------------------------------------------ wiring alignment (Figure 6b)
-  function alignment() {
-    var A = window.LEWI_ALIGN, host = $('alignment');
-    if (!A || !host) return;
-    var COND = {trained: ['var(--lewi)', 'o'], rewired: ['var(--ink-2)', '^'], init: ['var(--faint)', 's'], shuffled: ['#a17a36', 'D']};
-    var W = 560, L = 150, Rr = 16, lane = 15, gap = 22, top = 46;
-    var nF = A.families.length, nC = A.conditions.length, H = top + nF * (nC * lane + gap) + 36;
-    var svg = el('svg', {viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Edge F1 of the extracted module graph for trained LeWi and three controls in four settings.'}, host);
-    function X(v) { return L + v * (W - L - Rr); }
-    function shape(g, kind, x, y, r, col, filled) {
-      var a = {fill: filled ? col : 'var(--paper)', stroke: col, 'stroke-width': 1.5};
-      if (kind === 'o') a.d = 'M' + (x - r) + ' ' + y + 'a' + r + ' ' + r + ' 0 1 0 ' + 2 * r + ' 0a' + r + ' ' + r + ' 0 1 0 ' + (-2 * r) + ' 0';
-      else if (kind === 's') a.d = 'M' + (x - r * 0.85) + ' ' + (y - r * 0.85) + 'h' + 1.7 * r + 'v' + 1.7 * r + 'h' + (-1.7 * r) + 'z';
-      else if (kind === '^') a.d = 'M' + x + ' ' + (y - r * 1.1) + 'L' + (x + r) + ' ' + (y + r * 0.8) + 'L' + (x - r) + ' ' + (y + r * 0.8) + 'z';
-      else a.d = 'M' + x + ' ' + (y - r * 1.15) + 'L' + (x + r * 0.95) + ' ' + y + 'L' + x + ' ' + (y + r * 1.15) + 'L' + (x - r * 0.95) + ' ' + y + 'z';
-      return el('path', a, g);
-    }
-    // legend
-    var lx = 0;
-    A.conditions.forEach(function (c) {
-      var k = COND[c.key];
-      shape(svg, k[1], lx + 6, 12, 4.6, k[0], true);
-      var t = txt(svg, lx + 16, 16, c.name, 'al-c');
-      lx += 30 + c.name.length * 6.4;
-    });
-    shape(svg, 'o', 6, 32, 4.2, 'var(--ink-2)', true); txt(svg, 16, 36, 'all target edges', 'al-c');
-    shape(svg, 'o', 146, 32, 4.2, 'var(--ink-2)', false); txt(svg, 156, 36, 'edges from target intermediates', 'al-c');
     [0, 0.25, 0.5, 0.75, 1].forEach(function (v) {
-      el('line', {x1: X(v), x2: X(v), y1: top - 4, y2: H - 40, 'class': v === 0 ? 'al-l' : 'al-g'}, svg);
-      txt(svg, X(v), H - 24, v === 0 ? '0' : v === 1 ? '1' : v.toFixed(2), 'al-t', {'text-anchor': 'middle'});
+      el('line', {x1: x0, x2: x1, y1: Y(v), y2: Y(v), 'class': v ? 'gp-g' : 'gp-a'}, svg);
+      txt(svg, x0 - 10, Y(v) + 4, v ? v.toFixed(2) : '0', 'gp-t', {'text-anchor': 'end'});
     });
-    var byKey = {};
-    A.rows.forEach(function (r) { byKey[r.family + '|' + r.condition + '|' + r.metric] = r; });
-    A.families.forEach(function (f, i) {
-      var y0 = top + i * (nC * lane + gap);
-      var t = txt(svg, 0, y0 + nC * lane / 2 + 4, f.title, 'al-f');
-      A.conditions.forEach(function (c, j) {
-        var y = y0 + j * lane + lane / 2, k = COND[c.key];
-        ['higher_f1', 'edge_f1'].forEach(function (m) {
-          var r = byKey[f.key + '|' + c.key + '|' + m];
-          if (!r) return;
-          var yy = y + (m === 'edge_f1' ? -2.2 : 2.2);
-          el('line', {x1: X(Math.max(0, r.lo)), x2: X(Math.min(1, r.hi)), y1: yy, y2: yy, stroke: k[0], 'stroke-width': 1.3, opacity: 0.7}, svg);
-          var mk = shape(svg, k[1], X(r.mean), yy, c.key === 'trained' ? 4.6 : 3.9, k[0], m === 'edge_f1');
-          mk.style.cursor = 'default';
-          mk.addEventListener('pointermove', function (e) {
-            showTip('<div class="tt-h">' + f.title + '</div><div>' + c.name + '</div><div class="tt-r"><span>' +
-              (m === 'edge_f1' ? 'all target edges' : 'edges from intermediates') + '</span><span>' + r.mean.toFixed(3) + '</span></div>' +
-              '<div class="tt-dim">95% interval ' + r.lo.toFixed(2) + ' to ' + r.hi.toFixed(2) + ' · ' + r.k + ' instances</div>', e.clientX, e.clientY);
-          });
-          mk.addEventListener('pointerleave', hideTip);
-        });
-      });
+    ns.forEach(function (n) {
+      txt(svg, X(n), y1 + 22, n >= 1024 ? (n / 1024) + 'k' : String(n), 'gp-t', {'text-anchor': 'middle'});
     });
-    txt(svg, X(0.5), H - 4, 'Edge F1', 'al-t', {'text-anchor': 'middle'});
+    txt(svg, (x0 + x1) / 2, y1 + 52, 'Training samples', 'gp-axt', {'text-anchor': 'middle'});
+    txt(svg, 18, (y0 + y1) / 2, 'Test error (NMSE)', 'gp-axt', {'text-anchor': 'middle', transform: 'rotate(-90 18 ' + (y0 + y1) / 2 + ')'});
+    var dense = armOf(P, function (a) { return a.kind === 'dense'; });
+    var lewi = armOf(P, function (a) { return a.kind === 'lewi'; });
+    var oracle = armOf(P, function (a) { return a.key === 'graph_oracle(levels=all)'; });
+    var bases = P.arms.filter(function (a) { return a.kind === 'baseline'; });
+    function path(a) { return a.points.map(function (q, i) { return (i ? 'L' : 'M') + X(q.n).toFixed(1) + ' ' + Y(q.mean).toFixed(1); }).join(''); }
+    var fill = dense.points.map(function (q) { return X(q.n).toFixed(1) + ' ' + Y(q.mean).toFixed(1); })
+      .concat(oracle.points.slice().reverse().map(function (q) { return X(q.n).toFixed(1) + ' ' + Y(q.mean).toFixed(1); }));
+    el('path', {d: 'M' + fill.join('L') + 'Z', 'class': 'gp-fill'}, svg);
+    bases.forEach(function (a) { el('path', {d: path(a), 'class': 'gp-base'}, svg); });
+    el('path', {d: path(oracle), 'class': 'gp-oracle'}, svg);
+    oracle.points.forEach(function (q) { el('circle', {cx: X(q.n), cy: Y(q.mean), r: 4.5, 'class': 'gp-dot-o'}, svg); });
+    el('path', {d: path(dense), 'class': 'gp-dense'}, svg);
+    dense.points.forEach(function (q) { el('circle', {cx: X(q.n), cy: Y(q.mean), r: 5, 'class': 'gp-dot-d'}, svg); });
+    var gL = el('g', {'class': 'gp-lewi-g'}, svg);
+    var lp = el('path', {d: path(lewi), 'class': 'gp-lewi'}, gL);
+    lewi.points.forEach(function (q) { el('circle', {cx: X(q.n), cy: Y(q.mean), r: 5, 'class': 'gp-dot-l'}, gL); });
+    var gap = aulc(dense.points) - aulc(oracle.points);
+    var shareL = (aulc(dense.points) - aulc(lewi.points)) / gap, best = null;
+    bases.forEach(function (a) { var s = (aulc(dense.points) - aulc(a.points)) / gap; if (!best || s > best.s) best = {a: a, s: s}; });
+    txt(gL, x0 + 30, Y(0.2), 'LeWi closes ' + Math.round(shareL * 100) + '% of the gap', 'gp-note');
+    txt(gL, x0 + 30, Y(0.2) + 26, 'best baseline (' + best.a.name + '): ' + Math.round(best.s * 100) + '%', 'gp-note2');
+    var lx = x1 - 220, ly = y0 + 22;
+    function legend(g, y, cls, label, dash) {
+      el('line', {x1: lx, x2: lx + 42, y1: y, y2: y, 'class': cls}, g);
+      txt(g, lx + 54, y + 5, label, 'gp-leg');
+    }
+    legend(svg, ly, 'gp-dense', 'Dense');
+    legend(svg, ly + 30, 'gp-base', '6 baselines');
+    legend(gL, ly + 60, 'gp-lewi', 'LeWi');
+    legend(svg, ly + 90, 'gp-oracle', 'GraphOracle');
+    txt(svg, lx + 54, ly + 111, 'given the target graph', 'gp-leg-k');
+    var len = lp.getTotalLength ? lp.getTotalLength() : 0, buttons = document.querySelectorAll('.gapbox .seg-b'), auto = !REDUCE;
+    function show(on, animate) {
+      svg.classList.toggle('with-lewi', on);
+      buttons.forEach(function (b) { b.setAttribute('aria-selected', String((b.getAttribute('data-lewi') === 'on') === on)); });
+      if (on && animate && len && !REDUCE) {
+        lp.style.transition = 'none'; lp.style.strokeDasharray = len; lp.style.strokeDashoffset = len;
+        lp.getBoundingClientRect();
+        lp.style.transition = 'stroke-dashoffset 1.6s ease'; lp.style.strokeDashoffset = '0';
+      }
+    }
+    buttons.forEach(function (b) { b.addEventListener('click', function () { auto = false; show(b.getAttribute('data-lewi') === 'on', true); }); });
+    show(false);
+    once(svg, function () { setTimeout(function () { if (auto) show(true, true); }, 1800); });
   }
 
+  // ------------------------------------------------------------------ how it works: four steps, as in the talk
+  function stepperFig() {
+    var svg = $('stepper-svg'), box = $('stepper');
+    if (!svg || !box) return;
+    var W = 640, H = 451, RAD = 135;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.style.color = 'var(--ink-2)';
+    var defs = el('defs', null, svg), gr = el('radialGradient', {id: 'svShade'}, defs);
+    el('stop', {offset: '0%', 'stop-color': 'currentColor', 'stop-opacity': 0.2}, gr);
+    el('stop', {offset: '75%', 'stop-color': 'currentColor', 'stop-opacity': 0.07}, gr);
+    el('stop', {offset: '100%', 'stop-color': 'currentColor', 'stop-opacity': 0.03}, gr);
+    el('rect', {x: 0, y: 0, width: W, height: H, 'class': 'sv-field'}, svg);
+    var N = [[81, 60], [487, 98], [183, 182], [310, 161], [101, 254], [384, 298], [410, 397]];
+    var O = [[550, 65], [525, 316], [102, 384]];
+    var P0 = [282, 239], P1 = [209, 210], A = 2, C = 5;
+    var gR = el('g', {'class': 'sv-layer'}, svg), gLinks = el('g', null, svg), gGone = el('g', null, svg);
+    var gArrows = el('g', {'class': 'sv-layer'}, svg), gNodes = el('g', null, svg);
+    var ringR = el('circle', {r: RAD, 'class': 'sv-r'}, gR);
+    var rLine = el('line', {'class': 'sv-rl'}, gR), rLab = txt(gR, 0, 0, 'R', 'sv-lab');
+    O.forEach(function (p) { el('rect', {x: p[0] - 9, y: p[1] - 9, width: 18, height: 18, 'class': 'sv-o'}, gNodes); });
+    var nodeEls = N.map(function (p) { return el('circle', {cx: p[0], cy: p[1], r: 10, 'class': 'sv-n'}, gNodes); });
+    var focusRing = el('circle', {r: 26, 'class': 'sv-ring'}, gNodes);
+    var eNode = el('rect', {width: 22, height: 22, 'class': 'sv-e'}, gNodes);
+    var eLab = sub(gNodes, 0, 0, 'e', 'i', 'sv-lab', {'text-anchor': 'middle'});
+    txt(svg, W - 16, H - 14, 'embedding space (drawn in 2-D)', 'sv-cap', {'text-anchor': 'end'});
+    var links = N.map(function () { return el('line', {'class': 'sv-link'}, gLinks); });
+    var gone = el('line', {'class': 'sv-gone'}, gGone);
+    var pullT = txt(gArrows, 0, 0, 'pull', 'sv-pull-t', {'text-anchor': 'middle'}), pushT = txt(gArrows, 0, 0, 'push', 'sv-push-t', {'text-anchor': 'middle'});
+    var pullP = el('path', {'class': 'sv-pull'}, gArrows), pushP = el('path', {'class': 'sv-push'}, gArrows);
+    var st = {step: 0, e: P0.slice()}, sig = function (s) { return 1 / (1 + Math.exp(-s)); }, TOP = sig(1.5);
+    function chevrons(c, u, size) {
+      var n = [-u[1], u[0]], d = '';
+      [0, 11].forEach(function (off) {
+        var t = [c[0] + u[0] * off, c[1] + u[1] * off];
+        d += 'M' + (t[0] - u[0] * size + n[0] * size) + ' ' + (t[1] - u[1] * size + n[1] * size) + 'L' + t[0] + ' ' + t[1] +
+             'L' + (t[0] - u[0] * size - n[0] * size) + ' ' + (t[1] - u[1] * size - n[1] * size);
+      });
+      return d;
+    }
+    function draw() {
+      var e = st.e, s = st.step;
+      eNode.setAttribute('x', e[0] - 11); eNode.setAttribute('y', e[1] - 11);
+      eLab.setAttribute('x', e[0]); eLab.setAttribute('y', e[1] + 42);
+      focusRing.setAttribute('cx', e[0]); focusRing.setAttribute('cy', e[1]);
+      focusRing.style.opacity = s === 0 ? 1 : 0;
+      gR.style.opacity = s >= 1 ? 1 : 0;
+      ringR.setAttribute('cx', e[0]); ringR.setAttribute('cy', e[1]);
+      var ang = 2.95, rx = e[0] + RAD * Math.cos(ang), ry = e[1] + RAD * Math.sin(ang);
+      rLine.setAttribute('x1', e[0]); rLine.setAttribute('y1', e[1]); rLine.setAttribute('x2', rx); rLine.setAttribute('y2', ry);
+      rLine.style.opacity = s === 1 ? 1 : 0; rLab.style.opacity = s === 1 ? 1 : 0;
+      rLab.setAttribute('x', (e[0] + rx) / 2 - 4); rLab.setAttribute('y', (e[1] + ry) / 2 - 12);
+      N.forEach(function (p, i) {
+        var d = Math.hypot(p[0] - e[0], p[1] - e[1]) / RAD, on = s >= 1 && d < 1, l = links[i];
+        if (!on) { l.style.display = 'none'; return; }
+        var w = (sig(1.5 * (1 - d * d)) - 0.5) / (TOP - 0.5);
+        l.style.display = '';
+        l.setAttribute('x1', e[0]); l.setAttribute('y1', e[1]); l.setAttribute('x2', p[0]); l.setAttribute('y2', p[1]);
+        l.setAttribute('stroke-width', (2 + 4 * w).toFixed(2));
+        l.setAttribute('stroke-opacity', (0.45 + 0.55 * w).toFixed(2));
+      });
+      var dC = Math.hypot(N[C][0] - e[0], N[C][1] - e[1]);
+      gone.style.display = s === 3 && dC >= RAD ? '' : 'none';
+      gone.setAttribute('x1', e[0]); gone.setAttribute('y1', e[1]); gone.setAttribute('x2', N[C][0]); gone.setAttribute('y2', N[C][1]);
+      gArrows.style.opacity = s === 2 ? 1 : 0;
+      var a = N[A], ua = [a[0] - e[0], a[1] - e[1]], la = Math.hypot(ua[0], ua[1]); ua = [ua[0] / la, ua[1] / la];
+      var ca = [e[0] + ua[0] * la * 0.5, e[1] + ua[1] * la * 0.5];
+      pullP.setAttribute('d', chevrons(ca, ua, 7));
+      pullT.setAttribute('x', ca[0] - 18); pullT.setAttribute('y', ca[1] - 20);
+      var c = N[C], uc = [e[0] - c[0], e[1] - c[1]], lc = Math.hypot(uc[0], uc[1]); uc = [uc[0] / lc, uc[1] / lc];
+      var cc = [e[0] - uc[0] * lc * 0.3, e[1] - uc[1] * lc * 0.3];
+      pushP.setAttribute('d', chevrons(cc, uc, 7));
+      pushT.setAttribute('x', c[0] + 6); pushT.setAttribute('y', c[1] + 44);
+    }
+    var tabs = box.querySelectorAll('.st-tab'), rows = box.querySelectorAll('.st-math li');
+    tabs.forEach(function (t) { var p = document.createElement('i'); p.className = 'prog'; t.appendChild(p); });
+    var DWELL = [3200, 4200, 4200, 5200], auto = !REDUCE, timer = null, raf = null;
+    function setStep(i, animate) {
+      st.step = i;
+      tabs.forEach(function (t, k) {
+        t.setAttribute('aria-selected', String(k === i));
+        var p = t.querySelector('.prog');
+        p.style.transition = 'none'; p.style.width = '0';
+        if (k === i && auto) { p.getBoundingClientRect(); p.style.transition = 'width ' + DWELL[i] + 'ms linear'; p.style.width = '100%'; }
+      });
+      rows.forEach(function (r) {
+        var from = +r.getAttribute('data-from');
+        r.classList.toggle('later', from > i);
+        r.classList.toggle('past', from < i);
+      });
+      if (raf) cancelAnimationFrame(raf);
+      if (i < 3) st.e = P0.slice();
+      if (i === 3 && animate && !REDUCE) {
+        var t0 = null, from = P0.slice();
+        var go = function (now) {
+          if (t0 === null) t0 = now + 350;
+          var t = clamp((now - t0) / 1500, 0, 1), k = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+          st.e = [from[0] + (P1[0] - from[0]) * k, from[1] + (P1[1] - from[1]) * k];
+          draw();
+          if (t < 1) raf = requestAnimationFrame(go);
+        };
+        raf = requestAnimationFrame(go);
+      } else if (i === 3) st.e = P1.slice();
+      draw();
+      if (timer) clearTimeout(timer);
+      if (auto) timer = setTimeout(function () { setStep((i + 1) % 4, true); }, DWELL[i]);
+    }
+    tabs.forEach(function (t, k) { t.addEventListener('click', function () { auto = false; setStep(k, true); }); });
+    // the reader can drag the neuron e_i: the connections follow
+    var drag = null;
+    function toSvg(ev) { var pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
+    eNode.style.cursor = 'grab';
+    eNode.addEventListener('pointerdown', function (ev) {
+      ev.preventDefault(); auto = false; if (timer) clearTimeout(timer);
+      tabs.forEach(function (t) { var p = t.querySelector('.prog'); p.style.transition = 'none'; p.style.width = '0'; });
+      if (st.step === 0) setStep(1, false);
+      drag = true;
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    });
+    function move(ev) { if (!drag) return; var q = toSvg(ev); st.e = [clamp(q.x, 14, W - 14), clamp(q.y, 14, H - 14)]; draw(); }
+    function up() { drag = null; window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); }
+    setStep(0, false);
+    if (timer) clearTimeout(timer);
+    auto = !REDUCE;
+    once(svg, function () { if (auto) setStep(0, false); });
+  }
+
+  // ------------------------------------------------------------------ results: the pattern across target structures
+  function patternFig() {
+    var C = window.LEWI_CURVES, G = window.LEWI_GRAPHS, svg = $('pattern-svg');
+    if (!C || !svg) return;
+    var ROWS = [{wl: 'tree_functional_anova', g: 'Depth-4 tree', label: 'Depth-4 tree'},
+                {wl: 'dag_functional_anova', g: 'Depth-3 reuse DAG', label: 'Reuse DAG'},
+                {wl: 'rand_functional_anova', g: 'Sampled depth-4 DAG', label: 'Sampled DAGs'},
+                {wl: 'flat_functional_anova', g: 'Flat modules', label: 'Flat modules', note: 'smaller gain'},
+                {wl: 'dense_fourier', g: 'High-arity node', label: 'High-arity node', note: 'Dense better'}];
+    var W = 1000, top = 70, rowH = 70, H = top + ROWS.length * rowH + 64, px0 = 400, px1 = 800, XMAX = 0.7;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    function X(v) { return px0 + v / XMAX * (px1 - px0); }
+    [0, 0.2, 0.4, 0.6].forEach(function (v) {
+      el('line', {x1: X(v), x2: X(v), y1: top - 20, y2: top + ROWS.length * rowH - 26, 'class': 'pt-g'}, svg);
+      txt(svg, X(v), top + ROWS.length * rowH - 4, v ? v.toFixed(1) : '0', 'pt-t', {'text-anchor': 'middle'});
+    });
+    txt(svg, px0 - 14, top + ROWS.length * rowH - 4, '← better', 'pt-ax', {'text-anchor': 'end'});
+    txt(svg, (px0 + px1) / 2, top + ROWS.length * rowH + 30, 'average test error over training-set sizes', 'pt-ax', {'text-anchor': 'middle'});
+    var LEG = [['Dense', 'var(--dense)'], ['LeWi', 'var(--lewi)'], ['GraphOracle', 'var(--oracle)']], lx = px0 + 20;
+    LEG.forEach(function (l, i) {
+      el('circle', {cx: lx + i * 140, cy: 22, r: 8, fill: l[1]}, svg);
+      txt(svg, lx + i * 140 + 16, 27, l[0], 'pt-leg');
+    });
+    ROWS.forEach(function (row, i) {
+      var P = C.filter(function (p) { return p.key === row.wl; })[0];
+      if (!P) return;
+      var y = top + i * rowH + 10;
+      var dense = aulc(armOf(P, function (a) { return a.kind === 'dense'; }).points);
+      var lewi = aulc(armOf(P, function (a) { return a.kind === 'lewi'; }).points);
+      var oa = armOf(P, function (a) { return a.key === 'graph_oracle(levels=all)'; }), oracle = oa ? aulc(oa.points) : null;
+      var g = (G || []).filter(function (x) { return x.title === row.g; })[0];
+      if (g) icon(g, 10, y - 24, 110, 48);
+      txt(svg, 140, y + 6, row.label, 'pt-row');
+      if (oracle !== null) el('rect', {x: X(oracle), y: y - 6, width: X(dense) - X(oracle), height: 12, rx: 6, 'class': 'pt-band'}, svg);
+      var dots = [[dense, 'var(--dense)', 9, 'Dense'], [lewi, 'var(--lewi)', 10, 'LeWi']];
+      if (oracle !== null) dots.unshift([oracle, 'var(--oracle)', 8, 'GraphOracle']);
+      dots.forEach(function (d) {
+        var c = el('circle', {cx: X(d[0]), cy: y, r: d[2], fill: d[1], stroke: 'var(--paper-2)', 'stroke-width': 2}, svg);
+        c.addEventListener('pointermove', function (ev) { showTip('<div class="tt-h">' + row.label + '</div><div>' + d[3] + ': ' + d[0].toFixed(3) + '</div>', ev.clientX, ev.clientY); });
+        c.addEventListener('pointerleave', hideTip);
+      });
+      if (row.note) txt(svg, 830, y + 6, row.note, row.note === 'Dense better' ? 'pt-note' : 'pt-vs');
+      else {
+        var t = txt(svg, 830, y + 7, '−' + Math.round((1 - lewi / dense) * 100) + '%', 'pt-pct');
+        txt(svg, 830 + 62, y + 6, 'vs Dense', 'pt-vs');
+      }
+    });
+    function icon(g, x, y, w, h) {
+      var xs = g.nodes.map(function (n) { return n.y; }), ys = g.nodes.map(function (n) { return n.x; });
+      var mx = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+      function PX(n) { return x + n.y / (mx || 1) * w; }
+      function PY(n) { return y + (n.x - y0) / ((y1 - y0) || 1) * h; }
+      var gI = el('g', null, svg);
+      g.edges.forEach(function (e) { var a = g.nodes[e[0]], b = g.nodes[e[1]]; el('line', {x1: PX(a), y1: PY(a), x2: PX(b), y2: PY(b), 'class': 'pt-ic-e'}, gI); });
+      g.nodes.forEach(function (n) {
+        el('circle', {cx: PX(n), cy: PY(n), r: n.kind === 'input' ? 2.2 : 3.6, 'class': n.kind === 'input' ? 'pt-ic-in' : n.kind === 'readout' ? 'pt-ic-out' : 'pt-ic-fn'}, gI);
+      });
+    }
+  }
   // ------------------------------------------------------------------ world-model grid (Figure 7)
   var RDBU = ['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#f7f7f7', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'];
   function isDark() { return token('--wm-mid').toLowerCase() !== '#f7f7f7'; }
@@ -871,8 +718,8 @@
         if (D.verdict[i][j] === 'tie') el('circle', {cx: c.x + cw / 2, cy: top + i * ch + ch / 2, r: 4.6, 'class': 'wm-tie'}, svg);
         rect.addEventListener('pointermove', function (e) {
           var verdict = D.verdict[i][j] === 'win' ? 'LeWi better' : D.verdict[i][j] === 'loss' ? b + ' better' : 'no clear difference';
-          showTip('<div class="tt-h">' + task + ' · LeWi vs ' + b + '</div><div class="tt-r"><span>ΔAULC</span><span>' + (v > 0 ? '+' : '') + v.toFixed(3) + '</span></div>' +
-            '<div class="tt-dim">95% interval ' + D.lo[i][j].toFixed(3) + ' to ' + D.hi[i][j].toFixed(3) + '</div><div>' + verdict + '</div>', e.clientX, e.clientY);
+          showTip('<div class="tt-h">' + task + '</div><img class="tip-clip" src="assets/img/tasks/' + D.keys[j] + '.webp" alt="">' +
+            '<div>LeWi vs ' + b + ': <b>' + verdict + '</b></div>', e.clientX, e.clientY);
         });
         rect.addEventListener('pointerleave', hideTip);
       });
@@ -882,7 +729,11 @@
     txt(svg, gridW + 16, top - 11, 'W – T – L', 'wm-tally-h');
     D.tasks.forEach(function (task, j) {
       var c = cols[j], tx = c.x + cw / 2 + 4, ty = top + D.baselines.length * ch + 10;
-      txt(svg, tx, ty, task, 'wm-task', {'text-anchor': 'end', transform: 'rotate(-42 ' + tx + ' ' + ty + ')'});
+      var lab = txt(svg, tx, ty, task, 'wm-task', {'text-anchor': 'end', transform: 'rotate(-42 ' + tx + ' ' + ty + ')'});
+      lab.addEventListener('pointermove', function (e) {
+        showTip('<div class="tt-h">' + task + '</div><img class="tip-clip" src="assets/img/tasks/' + D.keys[j] + '.webp" alt="">', e.clientX, e.clientY);
+      });
+      lab.addEventListener('pointerleave', hideTip);
     });
     // colour scale
     var sx = gridW + 16, sw = 84, sy = top + D.baselines.length * ch + 30;
@@ -891,8 +742,9 @@
     el('rect', {x: sx, y: sy, width: sw, height: 9, fill: 'url(#wmScale)', rx: 2}, svg);
     txt(svg, sx, sy + 22, '−0.75', 'wm-scale-t');
     txt(svg, sx + sw, sy + 22, '+0.75', 'wm-scale-t', {'text-anchor': 'end'});
-    txt(svg, sx, sy + 38, '← LeWi better', 'wm-scale-k');
+    txt(svg, sx, sy + 38, 'blue: LeWi better', 'wm-scale-k');
   }
+
 
   // ------------------------------------------------------------------ gallery: the final learned wiring per target
   function gallery() {
@@ -933,13 +785,6 @@
       var i = (cur + (e.key === 'ArrowRight' ? 1 : runs.length - 1)) % runs.length;
       select(i); buttons[i].focus(); e.preventDefault();
     });
-    function glyphs(r) {
-      var c = r.counts, names = ['●', '■', '▲', '◆', '▼'], hollow = ['□', '△', '◇', '▽'], out = [];
-      out.push('<span><i>●</i>input</span>');
-      for (var l = 1; l < c.length - 1; l++) out.push('<span><i>' + (l <= 4 ? names[l] : hollow[(l - 1) % 4]) + '</i>layer ' + l + '</span>');
-      out.push('<span><i>★</i>output</span>');
-      return out.join('');
-    }
     function select(i) {
       cur = i;
       var r = runs[i];
@@ -947,19 +792,12 @@
       buttons.forEach(function (b, j) { b.setAttribute('aria-selected', String(j === i)); b.tabIndex = j === i ? 0 : -1; });
       targetGraph($('gallery-target'), r.teacher, {width: 260, levelH: r.teacher.leaves > 8 ? 26 : 30, nodeR: r.teacher.leaves > 8 ? 5 : 6.2, leafR: 2.8, pad: 9});
       $('gallery-note').textContent = r.note;
-      var hidden = r.counts.length - 2;
-      $('gallery-meta').innerHTML = '<dt>Network</dt><dd>' + hidden + ' × ' + r.counts[1] + '</dd>' +
-        '<dt>Training samples</dt><dd>' + fmtInt(r.n_train) + '</dd>' +
-        '<dt>Checkpoint</dt><dd>step ' + fmtInt(r.step) + '</dd>' +
-        '<dt>Test NMSE</dt><dd>' + r.test_nmse.toFixed(3) + '</dd>' +
-        '<dt>Active connections</dt><dd>' + Math.round(net.activeShare(0) * 100) + '%</dd>';
-      $('gallery-glyphs').innerHTML = glyphs(r);
       $('gallery-demo').href = 'demo/index.html#run=' + r.stem;
       view.setView(r.view.yaw, r.view.pitch);
       style.radius = r.counts[1] > 32 ? 2.3 : 3.0;
       baseAlpha = r.counts[1] > 32 ? 0.16 : 0.34;
-      style.only = 0;
-      style.edgeAlpha = Math.min(0.75, baseAlpha * 2);
+      style.only = null;
+      style.edgeAlpha = baseAlpha;
       layerButtons(r);
       view.dirty = true;
     }
@@ -1019,16 +857,13 @@
 
   function safe(fn) { try { fn(); } catch (err) { if (window.console) console.error(err); } }
   window.__lewi = {Net: Net, Viewer: Viewer, targetGraph: targetGraph};
-  safe(themeToggle);
   safe(nav);
-  safe(stepsFigs);
   safe(hero);
-  safe(gateProfile);
-  safe(method);
-  safe(benchGraphs);
-  safe(curves);
+  safe(piecesFig);
+  safe(gapFig);
+  safe(stepperFig);
+  safe(patternFig);
   safe(gallery);
-  safe(alignment);
   safe(worldModel);
   safe(copyBib);
   onTheme(worldModel);
