@@ -522,3 +522,16 @@ button.btn { cursor: pointer; }
   .js .hero-copy > *, .js .hero-visual { animation: none; }
 }
 @media print { .actions, .chip { display: none; } }
+
+/* refinements of 2026-10-20: the cell-count note, the quickstart's requirements, the protocol rule, downloads, citation */
+.counts-note { margin: 1.1rem 0 0; max-width: 860px; font-size: 0.86rem; line-height: 1.45; color: var(--muted); }
+.cb-step-note { margin: 0.55rem 0 0; font-size: 0.86rem; line-height: 1.5; color: var(--muted); }
+.cb-rule { margin: 1.6rem 0 0; max-width: 62rem; font-size: 0.98rem; line-height: 1.6; color: var(--ink); }
+.cb-rule b { font-weight: 600; }
+.cb-downloads { margin: 0.9rem 0 0; font-size: 0.92rem; color: var(--muted); }
+.cb-cite { margin: 1.4rem 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 0.9rem; color: var(--ink); }
+/* without JavaScript: static figures and a note */
+.nojs-img { display: block; width: 100%; height: auto; max-width: 100%; border-radius: 12px; }
+.nojs-note { max-width: 1180px; margin: 1.2rem auto 0; padding: 0 var(--pad); font-size: 0.95rem; color: var(--muted); }
+/* KaTeX's hidden MathML is absolutely positioned: a positioned scroller keeps it inside its own scroll area */
+.cb-tablebox, .wm-scroll { position: relative; }

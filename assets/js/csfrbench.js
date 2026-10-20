@@ -166,10 +166,13 @@
   }
 
   function bib() {
-    var dlg = $('bib-dlg'), open = $('bib-open'), close = $('bib-close'), copy = $('copy-bib'), pre = $('bibtex');
-    if (!dlg || !open) return;
+    var dlg = $('bib-dlg'), close = $('bib-close'), copy = $('copy-bib'), pre = $('bibtex');
+    var openers = document.querySelectorAll('#bib-open, .bib-open');
+    if (!dlg || !openers.length) return;
     function shut() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
-    open.addEventListener('click', function () { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); });
+    Array.prototype.forEach.call(openers, function (b) {
+      b.addEventListener('click', function () { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); });
+    });
     if (close) close.addEventListener('click', shut);
     dlg.addEventListener('click', function (ev) { if (ev.target === dlg) shut(); });
     if (copy && pre) copy.addEventListener('click', function () { copyText(pre.textContent, copy, 'Copy'); });

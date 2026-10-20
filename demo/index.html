@@ -10,13 +10,14 @@
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../assets/css/fonts.css">
 <link rel="stylesheet" href="style.css?v=20261003d">
-<link rel="stylesheet" href="site.css?v=202610201502">
+<link rel="stylesheet" href="site.css?v=202610201744">
 </head>
 <body>
 
 <div class="wrap">
 
 <header class="masthead">
+  <p class="crumbs"><a href="../">LeWi</a> · <a href="../paper/lewi.pdf">Paper</a> · <a href="https://github.com/Zhou-Hangyu/lewi-code">Code</a></p>
   <h1>Watch LeWi train</h1>
   <p class="subtitle">Neurons move, connections form and break, and the wiring comes to align with the target.</p>
   <p class="lede">Pick a target and press play. The colors are assigned after training; the network never sees them.</p>
@@ -36,7 +37,8 @@
       <div class="panel" id="geo3-panel">
         <p class="ptitle">Neuron positions</p>
         <p class="psub">drag to rotate · scroll to zoom · hover for details ·
-          click to highlight a path · shift-click to trace connections</p>
+          click to highlight a path · shift-click to trace connections ·
+          keys: Tab here, then N / P to step, Enter to highlight, T to trace</p>
         <div class="geo-box"><canvas id="geo3"></canvas></div>
         <div class="viewrow">
           <span class="ctl"><span class="c3d-legkey">Edges</span>
@@ -148,7 +150,7 @@
 </div>
 
 <script src="assets/graphs.js?v=20261003d"></script>
-<script src="player3d.js?v=202610201502"></script>
+<script src="player3d.js?v=202610201744"></script>
 <script src="static3d.js?v=20261003d"></script>
 </body>
 </html>

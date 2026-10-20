@@ -776,7 +776,7 @@
     var ROWS = [{wl: 'tree_functional_anova', g: 'Depth-4 tree', label: 'Depth-4 tree'},
                 {wl: 'dag_functional_anova', g: 'Depth-3 reuse DAG', label: 'Reuse DAG'},
                 {wl: 'rand_functional_anova', g: 'Sampled depth-4 DAG', label: 'Sampled DAGs'},
-                {wl: 'flat_functional_anova', g: 'Flat modules', label: 'Flat modules', note: 'smaller gain'},
+                {wl: 'flat_functional_anova', g: 'Flat modules', label: 'Flat modules'},
                 {wl: 'dense_fourier', g: 'High-arity node', label: 'High-arity node', note: 'Dense better', oracleIsDense: true}];
     var W = 1000, top = 70, rowH = 70, H = top + ROWS.length * rowH + 64, px0 = 400, px1 = 800, XMAX = 0.7;
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);

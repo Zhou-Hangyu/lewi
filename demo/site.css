@@ -19,3 +19,9 @@ body::before {
 .rgcap { display: none; }
 h2 { font: 400 clamp(1.75rem, 1.25rem + 1.4vw, 2.3rem)/1.1 var(--serif); font-variation-settings: "opsz" 72; letter-spacing: -0.02em; margin: 0 0 0.7rem; }
 .cap { font: 400 1.06rem/1.6 var(--serif); color: var(--prose); margin: 0 0 1.4rem; }
+
+/* the way back: project page, paper, code */
+.crumbs { margin: 0 0 0.9rem; font-size: 0.92rem; color: var(--muted, #6b7280); }
+.crumbs a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.crumbs a:hover { color: var(--ink, #111); }
+.c3d-zone:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }

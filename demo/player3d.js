@@ -639,6 +639,8 @@
   // After the first run is on screen, the other tabs' runs load one after
   // another in the background, so a later tab opens at once.
   function preload() {
+    var c = navigator.connection;
+    if ((c && (c.saveData || /2g/.test(c.effectiveType || ''))) || matchMedia('(max-width: 700px)').matches) return;
     var queue = SHOWN.map(function (r) { return r.stem; })
       .filter(function (s) { return !store[s]; });
     (function next() {
@@ -1614,6 +1616,20 @@
       syncConnNote();
       drawGeo(st.f);
     }
+    function unitTip(bu, keys) {
+      var b = R.bestOf(st.f, bu);
+      return '<div class="tt-head">' + unitName(bu) + '</div>' +
+        (R.levelOf[bu] === 0
+          ? '<div class="tt-dim">' + inputNote(R.idxIn[bu]) + '</div>' : '') +
+        (b.lit
+          ? '<div>associated with <b>z' + sub(b.node) + '</b> · |r| = ' + b.s.toFixed(2) + '</div>'
+          : '<div class="tt-dim">' + (R.assoc ? UNASSIGNED : 'below the permutation floor') +
+            '</div>') +
+        profileHtml(st.f, bu) +
+        '<div class="tt-dim" style="margin-top:3px">' +
+        (keys ? 'Enter: highlight its path · T: ' : 'click: highlight its path · shift-click / right-click: ') +
+        (st.conn[bu] ? 'stop tracing' : 'trace its connections') + '</div>';
+    }
     var drag = null;
     geoZone.addEventListener('pointerdown', function (e) {
       drag = {x: e.clientX, y: e.clientY, moved: false, t0: Date.now()};
@@ -1666,25 +1682,56 @@
         return;
       }
       st.hover = {type: 'unit', u: bu};
-      var b = R.bestOf(st.f, bu);
-      tipShow(e.clientX, e.clientY,
-        '<div class="tt-head">' + unitName(bu) + '</div>' +
-        (R.levelOf[bu] === 0
-          ? '<div class="tt-dim">' + inputNote(R.idxIn[bu]) + '</div>' : '') +
-        (b.lit
-          ? '<div>associated with <b>z' + sub(b.node) + '</b> · |r| = ' + b.s.toFixed(2) + '</div>'
-          : '<div class="tt-dim">' + (R.assoc ? UNASSIGNED : 'below the permutation floor') +
-            '</div>') +
-        profileHtml(st.f, bu) +
-        '<div class="tt-dim" style="margin-top:3px">click: highlight its path · ' +
-        'shift-click / right-click: ' +
-        (st.conn[bu] ? 'stop tracing' : 'trace its connections') + '</div>');
+      tipShow(e.clientX, e.clientY, unitTip(bu, false));
       drawGeo(st.f);
       redrawMats();
     });
     geoZone.addEventListener('pointerleave', function () {
       drag = null; st.hover = null; tipHide(); drawGeo(st.f); redrawMats();
     });
+    // the keys: Tab to the panel, N / P step through the drawn neurons, Enter highlights a path, T traces connections
+    geoZone.tabIndex = 0;
+    geoZone.setAttribute('role', 'application');
+    geoZone.setAttribute('aria-label', 'Neuron positions. N and P step through the neurons, Enter highlights a path, ' +
+                         'T traces connections, Escape clears.');
+    var kbU = null;
+    function kbShow(u) {
+      for (var k = 0; k < screenPts.length; k++) {
+        if (screenPts[k].u !== u) continue;
+        var r = geoCv.getBoundingClientRect();
+        st.hover = {type: 'unit', u: u};
+        tipShow(r.left + screenPts[k].x, r.top + screenPts[k].y, unitTip(u, true));
+        drawGeo(st.f);
+        redrawMats();
+        return;
+      }
+    }
+    function kbClear() { kbU = null; st.hover = null; tipHide(); drawGeo(st.f); redrawMats(); }
+    geoZone.addEventListener('keydown', function (e) {
+      var key = e.key.toLowerCase();
+      if (key === 'n' || key === 'p') {
+        var us = screenPts.map(function (s) { return s.u; }).sort(function (a, b) { return a - b; });
+        if (!us.length) return;
+        var i = kbU === null ? -1 : us.indexOf(kbU);
+        i = key === 'n' ? (i + 1) % us.length : (i - 1 + us.length) % us.length;
+        kbU = us[i];
+        setSpin(false);
+        kbShow(kbU);
+        e.preventDefault();
+      } else if (e.key === 'Enter' && kbU !== null) {
+        if (kbU in st.pinned) { delete st.pinned[kbU]; st.nPinned--; }
+        else if (st.nPinned < 12) { st.pinned[kbU] = 1; st.nPinned++; }
+        kbShow(kbU);
+        e.preventDefault();
+      } else if (key === 't' && kbU !== null) {
+        toggleConn(kbU);
+        kbShow(kbU);
+        e.preventDefault();
+      } else if (e.key === 'Escape') {
+        kbClear();
+      }
+    });
+    geoZone.addEventListener('blur', kbClear);
     geoZone.addEventListener('wheel', function (e) {
       e.preventDefault();
       var fz = Math.exp(-e.deltaY * 0.0015);
