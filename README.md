@@ -2,6 +2,7 @@
 
 Project page: https://zhou-hangyu.github.io/lewi/
 
-Hangyu Zhou, Constantine Dovrolis, Steve Mussmann
+Hangyu Zhou, Constantine Dovrolis, Stephen Mussmann
 
-This repository holds the static project page and the paper PDF. The code of the method will be released soon.
+This repository holds the static project page and the paper PDF. The code, LeWi and CSFRBench, is at
+https://github.com/Zhou-Hangyu/lewi-code.

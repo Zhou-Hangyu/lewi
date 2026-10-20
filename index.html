@@ -18,9 +18,9 @@
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/fonts.css?v=202610151622">
-<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610151622">
-<link rel="stylesheet" href="assets/css/site.css?v=202610151622">
+<link rel="stylesheet" href="assets/css/fonts.css?v=202610201612">
+<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610201612">
+<link rel="stylesheet" href="assets/css/site.css?v=202610201612">
 </head>
 <body>
 
@@ -32,13 +32,14 @@
       <h1 class="title">Learning Computational Structure for Sample&#8209;Efficient Prediction</h1>
       <p class="tldr">Neurons get learned positions and connect only when close, so the network learns its own wiring.</p>
       <div class="byline">
-        <p class="authors"><a href="https://zhou-hangyu.github.io/">Hangyu Zhou</a><sup>1</sup>, <a href="https://sites.cc.gatech.edu/fac/constantinos.dovrolis/">Constantine Dovrolis</a><sup>2</sup>, <a href="https://steve.mussmann.us/">Steve Mussmann</a><sup>1</sup></p>
-        <p class="affils"><sup>1</sup>Georgia Institute of Technology &nbsp; <sup>2</sup>The Cyprus Institute</p>
+        <p class="authors"><a href="https://zhou-hangyu.github.io/">Hangyu Zhou</a><sup>1</sup>, <a href="https://sites.cc.gatech.edu/fac/constantinos.dovrolis/">Constantine Dovrolis</a><sup>2</sup>, <a href="https://steve.mussmann.us/">Stephen Mussmann</a><sup>1</sup></p>
+        <p class="affils"><sup>1</sup>Georgia Institute of Technology &nbsp; <sup>2</sup>University of Cyprus</p>
       </div>
       <div class="actions">
         <a class="btn btn-primary" href="paper/lewi.pdf"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h6.5L15 6v11.5H5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11.5 2.5V6H15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 10.5h5M7.5 13.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Paper</a>
         <a class="btn" href="demo/index.html"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8.3 7.2v5.6l4.6-2.8z" fill="currentColor"/></svg>Interactive demo</a>
-        <span class="btn btn-soon" aria-disabled="true" title="The code will be released soon."><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6 3 10l4 4M13 6l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Code<span class="soon">coming soon</span></span>
+        <a class="btn" href="https://github.com/Zhou-Hangyu/lewi-code"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6 3 10l4 4M13 6l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Code</a>
+        <a class="btn" href="csfrbench/"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="4.5" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="5" cy="14.5" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="14.5" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 6.3 6 12.7M11 6.3l3 6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>CSFRBench</a>
         <button type="button" class="btn" id="bib-open" aria-haspopup="dialog"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 5.5h4v4c0 2.5-1.2 4-3.2 5M11.5 5.5h4v4c0 2.5-1.2 4-3.2 5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>BibTeX</button>
       </div>
     </div>
@@ -78,16 +79,20 @@
   <div class="wrap">
     <header class="sec-head">
       <h2 id="bench-h">CSFRBench: the pieces are known, but hidden</h2>
-      <p class="sec-lede">A benchmark of targets built from small pieces on a graph we know. The learner sees only input&ndash;output examples; the graph is used only to score it.</p>
+      <p class="sec-lede">A benchmark of targets built from small pieces on a known graph. The learner sees only input&ndash;output examples. We keep the graph to build graph-informed reference networks and to evaluate the structure the learner finds.</p>
     </header>
     <div class="bench-flow">
-      <figure class="bf-card bf-hidden"><svg id="bench-target" aria-hidden="true"></svg><figcaption><b>Target</b><span>Small pieces on a known graph, kept from the learner.</span></figcaption></figure>
+      <figure class="bf-card bf-hidden"><svg id="bench-target" aria-hidden="true"></svg><figcaption><b>Target</b><span>Small pieces on a known graph, hidden from the learner.</span></figcaption></figure>
       <div class="bf-arrow" aria-hidden="true"><svg viewBox="0 0 40 16"><path d="M2 8h34m-7-6l7 6l-7 6"/></svg></div>
       <figure class="bf-card"><svg id="bench-examples" aria-hidden="true"></svg><figcaption><b>Examples</b><span>Random inputs and the output. This is all the learner sees.</span></figcaption></figure>
       <div class="bf-arrow" aria-hidden="true"><svg viewBox="0 0 40 16"><path d="M2 8h34m-7-6l7 6l-7 6"/></svg></div>
-      <figure class="bf-card"><svg id="bench-learner" aria-hidden="true"></svg><figcaption><b>Learner</b><span>Trained on the examples, then scored against the graph.</span></figcaption></figure>
+      <figure class="bf-card"><svg id="bench-learner" aria-hidden="true"></svg><figcaption><b>Learner</b><span>Trained on the examples, then tested on new inputs.</span></figcaption></figure>
     </div>
     <div class="bench-graphs" id="bench-graphs" role="img" aria-label="The six graph families of CSFRBench: depth-4 tree, depth-5 tree, reuse DAG, sampled DAGs, flat modules and a high-arity node."></div>
+    <div class="actions bench-actions">
+      <a class="btn btn-primary" href="csfrbench/">Benchmark your model<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a class="btn" href="https://github.com/Zhou-Hangyu/lewi-code/tree/main/csfrbench"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6 3 10l4 4M13 6l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>CSFRBench code</a>
+    </div>
   </div>
 </section>
 
@@ -143,7 +148,7 @@
   <div class="wrap">
     <header class="sec-head">
       <h2 id="results-h">Fewer samples when the target has structure</h2>
-      <p class="sec-lede">LeWi helps most when small pieces are stacked or reused.</p>
+      <p class="sec-lede">LeWi improves sample efficiency across hierarchical, reuse-based, and independent modular computations.</p>
     </header>
     <figure class="pattern-fig"><svg id="pattern-svg" role="img" aria-label="Average test error of Dense, LeWi and GraphOracle on five target structures."></svg></figure>
   </div>
@@ -197,7 +202,7 @@
   </div>
   <pre id="bibtex">@misc{zhou2026lewi,
   title  = {Learning Computational Structure for Sample-Efficient Prediction},
-  author = {Zhou, Hangyu and Dovrolis, Constantine and Mussmann, Steve},
+  author = {Zhou, Hangyu and Dovrolis, Constantine and Mussmann, Stephen},
   year   = {2026},
   url    = {https://zhou-hangyu.github.io/lewi/}
 }</pre>
@@ -205,13 +210,13 @@
 
 <div class="tip" id="tip" role="tooltip"></div>
 
-<script src="assets/data/hero.js?v=202610151622"></script>
-<script src="assets/data/pieces.js?v=202610151622" defer></script>
-<script src="assets/data/curves.js?v=202610151622" defer></script>
-<script src="assets/data/graphs.js?v=202610151622" defer></script>
-<script src="assets/data/gallery.js?v=202610151622" defer></script>
-<script src="assets/data/alignment.js?v=202610151622" defer></script>
-<script src="assets/data/worldmodel.js?v=202610151622" defer></script>
-<script src="assets/js/site.js?v=202610151622" defer></script>
+<script src="assets/data/hero.js?v=202610201612"></script>
+<script src="assets/data/pieces.js?v=202610201612" defer></script>
+<script src="assets/data/curves.js?v=202610201612" defer></script>
+<script src="assets/data/graphs.js?v=202610201612" defer></script>
+<script src="assets/data/gallery.js?v=202610201612" defer></script>
+<script src="assets/data/alignment.js?v=202610201612" defer></script>
+<script src="assets/data/worldmodel.js?v=202610201612" defer></script>
+<script src="assets/js/site.js?v=202610201612" defer></script>
 </body>
 </html>
