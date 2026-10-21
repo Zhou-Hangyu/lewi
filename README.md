@@ -1,6 +1,6 @@
 # LeWi: Learning Computational Structure for Sample-Efficient Prediction
 
-Project page: https://zhou-hangyu.github.io/lewi/
+Project page: https://zhou-hangyu.github.io/lewi/ · Paper: https://arxiv.org/abs/2610.28555
 
 Hangyu Zhou, Constantine Dovrolis, Stephen Mussmann
 

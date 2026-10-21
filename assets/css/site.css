@@ -143,7 +143,7 @@ button.btn { cursor: pointer; }
   min-height: min(100svh, 920px);
 }
 .title { font: 380 clamp(2.3rem, 1.25rem + 2.6vw, 3.6rem)/1.06 var(--serif); font-variation-settings: "opsz" 72; letter-spacing: -0.022em; margin: 0 0 1.4rem; text-wrap: balance; color: var(--ink); }
-.tldr { font: 400 clamp(1.14rem, 1rem + 0.4vw, 1.32rem)/1.55 var(--serif); color: var(--ink-2); max-width: 33rem; margin: 0 0 2rem; }
+.tldr { font: 400 clamp(1.14rem, 1rem + 0.4vw, 1.32rem)/1.55 var(--serif); color: var(--ink-2); max-width: 33rem; margin: 0 0 2rem; text-wrap: pretty; }
 .byline { margin: 0 0 1.9rem; font-family: var(--sans); }
 .authors { font: 500 1.02rem/1.6 var(--sans); margin: 0 0 0.15rem; color: var(--ink); }
 .authors a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--hair); }

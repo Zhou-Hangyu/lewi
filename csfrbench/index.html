@@ -21,9 +21,9 @@
 <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
 <link rel="preload" href="../assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../assets/css/fonts.css?v=202610201739">
-<link rel="stylesheet" href="../assets/katex/katex.min.css?v=202610201739">
-<link rel="stylesheet" href="../assets/css/site.css?v=202610201739">
+<link rel="stylesheet" href="../assets/css/fonts.css?v=202610211133">
+<link rel="stylesheet" href="../assets/katex/katex.min.css?v=202610211133">
+<link rel="stylesheet" href="../assets/css/site.css?v=202610211133">
 <noscript><style>#cb-strip, #results .seg { display: none; } #cb-cards { display: block; }</style></noscript>
 </head>
 <body class="cb">
@@ -38,7 +38,7 @@
       <a class="btn btn-primary" href="#quickstart">Quickstart</a>
       <a class="btn" href="https://github.com/Zhou-Hangyu/lewi-code/tree/main/csfrbench"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6 3 10l4 4M13 6l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Code</a>
       <a class="btn" href="https://github.com/Zhou-Hangyu/lewi-code/blob/main/docs/SPEC.md">Specification</a>
-      <a class="btn" href="../paper/lewi.pdf">Paper</a>
+      <a class="btn" href="https://arxiv.org/abs/2610.28555">Paper</a>
       <a class="btn" href="../">LeWi</a>
       <button type="button" class="btn" id="bib-open" aria-haspopup="dialog">BibTeX</button>
     </div>
@@ -231,7 +231,7 @@ target.intermediates(X)      <i># every intermediate</i></code></pre>
         </table>
       </div>
     </div>
-    <p class="cb-note"><b>Benchmark version 1.5</b>: the targets, data, protocol and records of the paper (package 1.6.0 implements it). With a result, give the version, the setting, the instances, the training-set sizes, the configurations per condition, the compute, the mean AULC with its 95% interval and the paired differences: <a href="https://github.com/Zhou-Hangyu/lewi-code/blob/main/csfrbench/README.md#reporting-a-result">the reporting template</a>.</p>
+    <p class="cb-note"><b>Benchmark version 1.5</b>: the targets, data, protocol and records of the paper (package 1.6.1 implements it). With a result, give the version, the setting, the instances, the training-set sizes, the configurations per condition, the compute, the mean AULC with its 95% interval and the paired differences: <a href="https://github.com/Zhou-Hangyu/lewi-code/blob/main/csfrbench/README.md#reporting-a-result">the reporting template</a>.</p>
   </div>
 </section>
 
@@ -300,15 +300,18 @@ csfrbench analyze --runs runs/tree</code></pre>
     <button class="bib-x" id="bib-close" type="button" aria-label="Close"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   </div>
   <pre id="bibtex">@misc{zhou2026lewi,
-  title  = {Learning Computational Structure for Sample-Efficient Prediction},
+  title = {Learning Computational Structure for Sample-Efficient Prediction},
   author = {Zhou, Hangyu and Dovrolis, Constantine and Mussmann, Stephen},
-  year   = {2026},
-  url    = {https://zhou-hangyu.github.io/lewi/}
+  year = {2026},
+  eprint = {2610.28555},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  url = {https://arxiv.org/abs/2610.28555}
 }</pre>
 </dialog>
 
-<script src="../assets/data/graphs.js?v=202610201739"></script>
-<script src="../assets/data/csfrbench.js?v=202610201739"></script>
-<script src="../assets/js/csfrbench.js?v=202610201739"></script>
+<script src="../assets/data/graphs.js?v=202610211133"></script>
+<script src="../assets/data/csfrbench.js?v=202610211133"></script>
+<script src="../assets/js/csfrbench.js?v=202610211133"></script>
 </body>
 </html>

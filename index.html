@@ -21,9 +21,9 @@
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/fonts.css?v=202610201739">
-<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610201739">
-<link rel="stylesheet" href="assets/css/site.css?v=202610201739">
+<link rel="stylesheet" href="assets/css/fonts.css?v=202610211133">
+<link rel="stylesheet" href="assets/katex/katex.min.css?v=202610211133">
+<link rel="stylesheet" href="assets/css/site.css?v=202610211133">
 <noscript><style>#hero-net, .hv-target, .pieces .seg, #pieces-svg, .bench-graphs > :not(noscript), #gap .seg, #gap-svg, #pattern-svg, .align-row, #wm { display: none; } .bench-graphs { display: block; }</style></noscript>
 </head>
 <body>
@@ -34,13 +34,13 @@
   <div class="hero-grid">
     <div class="hero-copy">
       <h1 class="title">Learning Computational Structure for Sample&#8209;Efficient Prediction</h1>
-      <p class="tldr">Neurons get learned positions and connect only when close, so the network learns its own wiring.</p>
+      <p class="tldr">High-dimensional prediction problems often hide sparse computational structure. LeWi learns neural connectivity to exploit that structure and improve sample efficiency.</p>
       <div class="byline">
         <p class="authors"><a href="https://zhou-hangyu.github.io/">Hangyu Zhou</a><sup>1</sup>, <a href="https://sites.cc.gatech.edu/fac/constantinos.dovrolis/">Constantine Dovrolis</a><sup>2</sup>, <a href="https://steve.mussmann.us/">Stephen Mussmann</a><sup>1</sup></p>
         <p class="affils"><sup>1</sup>Georgia Institute of Technology &nbsp; <sup>2</sup>University of Cyprus</p>
       </div>
       <div class="actions">
-        <a class="btn btn-primary" href="paper/lewi.pdf"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h6.5L15 6v11.5H5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11.5 2.5V6H15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 10.5h5M7.5 13.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Paper</a>
+        <a class="btn btn-primary" href="https://arxiv.org/abs/2610.28555"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h6.5L15 6v11.5H5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11.5 2.5V6H15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 10.5h5M7.5 13.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Paper</a>
         <a class="btn" href="demo/index.html"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8.3 7.2v5.6l4.6-2.8z" fill="currentColor"/></svg>Interactive demo</a>
         <a class="btn" href="csfrbench/"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="4.5" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="5" cy="14.5" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="15" cy="14.5" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9 6.3 6 12.7M11 6.3l3 6.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>CSFRBench</a>
         <a class="btn" href="https://github.com/Zhou-Hangyu/lewi-code"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6 3 10l4 4M13 6l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Code</a>
@@ -57,7 +57,7 @@
 </header>
 
 <main>
-<noscript><p class="nojs-note">The figures of this page are drawn by JavaScript. Static versions of the main figures appear below; the <a href="paper/lewi.pdf">paper</a> has all of them.</p></noscript>
+<noscript><p class="nojs-note">The figures of this page are drawn by JavaScript. Static versions of the main figures appear below; the <a href="https://arxiv.org/abs/2610.28555">paper</a> has all of them.</p></noscript>
 
 <section class="band" id="motivation" aria-labelledby="motivation-h">
   <div class="wrap">
@@ -210,22 +210,25 @@
     <button class="bib-x" id="bib-close" type="button" aria-label="Close"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   </div>
   <pre id="bibtex">@misc{zhou2026lewi,
-  title  = {Learning Computational Structure for Sample-Efficient Prediction},
+  title = {Learning Computational Structure for Sample-Efficient Prediction},
   author = {Zhou, Hangyu and Dovrolis, Constantine and Mussmann, Stephen},
-  year   = {2026},
-  url    = {https://zhou-hangyu.github.io/lewi/}
+  year = {2026},
+  eprint = {2610.28555},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  url = {https://arxiv.org/abs/2610.28555}
 }</pre>
 </dialog>
 
 <div class="tip" id="tip" role="tooltip"></div>
 
-<script src="assets/data/hero.js?v=202610201739"></script>
-<script src="assets/data/pieces.js?v=202610201739" defer></script>
-<script src="assets/data/curves.js?v=202610201739" defer></script>
-<script src="assets/data/graphs.js?v=202610201739" defer></script>
-<script src="assets/data/gallery.js?v=202610201739" defer></script>
-<script src="assets/data/alignment.js?v=202610201739" defer></script>
-<script src="assets/data/worldmodel.js?v=202610201739" defer></script>
-<script src="assets/js/site.js?v=202610201739" defer></script>
+<script src="assets/data/hero.js?v=202610211133"></script>
+<script src="assets/data/pieces.js?v=202610211133" defer></script>
+<script src="assets/data/curves.js?v=202610211133" defer></script>
+<script src="assets/data/graphs.js?v=202610211133" defer></script>
+<script src="assets/data/gallery.js?v=202610211133" defer></script>
+<script src="assets/data/alignment.js?v=202610211133" defer></script>
+<script src="assets/data/worldmodel.js?v=202610211133" defer></script>
+<script src="assets/js/site.js?v=202610211133" defer></script>
 </body>
 </html>
